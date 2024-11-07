@@ -15,6 +15,10 @@ class Product {
         this.quantity -= value;
     }
 
+    toString() {
+        return `${this.name},${this.price},${this.quantity},${this.promotion}\n`;
+    }
+
 
 }
 
