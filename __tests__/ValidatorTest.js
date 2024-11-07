@@ -7,7 +7,8 @@ describe("Validator 테스트", () => {
         expect(validate.checkFormat(condition)).toBe(condition);
     });
 
-    test.each(["사이다", "2", "사이다-", "사이다-2", "[사이다]", "[사이다-2", "사이다2", "[사이다-2][감자칩-1]"])("구매하고 싶은 값 %s는 잘못된 형식으로 에러 처리한다.", (condition) => { 
+    test.each(["사이다", "2", "사이다-", "사이다-2", "[사이다]", "[사이다-2", "사이다2", 
+               "[사이다-2][감자칩-1]", "[사이다-2],", "[사이다-2],[감자칩-2"])("구매하고 싶은 값 %s는 잘못된 형식으로 에러 처리한다.", (condition) => { 
         expect(() => validate.checkFormat(condition)).toThrow("[ERROR]");
     });
 
