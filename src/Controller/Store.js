@@ -2,6 +2,7 @@ import fs from "fs";
 import Products from "../Model/Product.js";
 import InputView from "../View/InputView.js";
 import OutputView from "../View/OutputView.js";
+import Validator from "../Model/Validator.js";
 
 
 
@@ -18,22 +19,24 @@ class Store {
 
     async open() {
         this.#outputView.initial(this.products);
-        const purchase = await this.validPurchaseInput();
+        const purchase = await this.getPurchaseInput();
     }
 
-    async validPurchaseInput() {
-        while (true) {
+    async getPurchaseInput() {
+        //while (true) {
             let input = await this.#inputView.buy();
 
             try {
                 // 유효성 체크
+                const validate = new Validator();
+                validate.purchaseInput(input);
 
                 return input;
 
             } catch (error) {
                 // 에러 메시지 출력
             }
-        }
+        //}
     }
 
 
