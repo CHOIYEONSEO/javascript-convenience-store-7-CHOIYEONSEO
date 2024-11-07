@@ -2,6 +2,7 @@ import InputView from "./View/InputView.js";
 import fs from "fs";
 import Product from "./Model/Product.js";
 import {Console} from "@woowacourse/mission-utils";
+import Store from "./Controller/Store.js";
 
 const PRODUCTS_FILE_PATH = "public/products.md";
 const READ_OPTION = "utf-8";
@@ -14,7 +15,10 @@ class App {
             return new Product(...splitElement);
         })
 
-        this.updateProducts(PRODUCTS_FILE_PATH, products);
+        const store = new Store(products);
+        store.open();
+
+        //this.updateProducts(PRODUCTS_FILE_PATH, products);
 
         // const inputView = new InputView();
         // const input = await inputView.start(splitData);
