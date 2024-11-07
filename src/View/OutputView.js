@@ -44,6 +44,10 @@ class OutputView {
         return promotion;
     }
 
+    printError(error) {
+        Console.print(error.message);
+    }
+
 }
 
 export default OutputView;

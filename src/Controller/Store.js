@@ -3,8 +3,7 @@ import Products from "../Model/Product.js";
 import InputView from "../View/InputView.js";
 import OutputView from "../View/OutputView.js";
 import Validator from "../Model/Validator.js";
-
-
+import {Console} from "@woowacourse/mission-utils";
 
 class Store {
     #inputView;
@@ -14,7 +13,7 @@ class Store {
     constructor(products) {
         this.#inputView = new InputView();
         this.#outputView = new OutputView();
-        this.products = products;
+        this.products = products;  // 리팩토링 시 app.js에 있는 products[] 생성 코드 여기로 가져오기
     }
 
     async open() {
@@ -29,14 +28,34 @@ class Store {
             try {
                 // 유효성 체크
                 const validate = new Validator();
-                validate.purchaseInput(input);
+                input = validate.purchaseInput(input);
+
+                this.checkExistence(input, this.products);
+                
+
 
                 return input;
 
             } catch (error) {
-                // 에러 메시지 출력
+                this.#outputView.printError(error);
             }
         //}
+    }
+
+    // 함수 10줄 넘어감.
+    checkExistence(inputs = [], targets = []) {
+        inputs.forEach((input) => {
+            input = input[0];
+            const foundInput = targets.find((target) => {
+                return target.isExistence(input);
+            })
+
+            if (foundInput == undefined) {
+                const errorMessage = `[ERROR] 존재하지 않는 상품입니다. 다시 입력해 주세요.`;
+                throw new Error(errorMessage);
+            }
+        })
+            
     }
 
 

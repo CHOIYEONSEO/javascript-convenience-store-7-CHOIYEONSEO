@@ -19,6 +19,10 @@ class Product {
         return `${this.name},${this.price},${this.quantity},${this.promotion}\n`;
     }
 
+    isExistence(input) {
+        return this.name === input;
+    }
+
 
 }
 

@@ -10,7 +10,7 @@ class Validator {
     purchaseInput(input) {
         let formattedInput = this.checkFormat(input);
 
-
+        return formattedInput;
     }
 
     checkFormat(input) {
@@ -19,7 +19,7 @@ class Validator {
 
             return matches.map(match => [match[1], Number(match[2])]);
         } else {
-            const errorMessage = `[ERROR] 올바르지 않은 형식으로 입력했습니다. 다시 입력해 주세요.`; // OutputView로 빼기?
+            const errorMessage = `[ERROR] 올바르지 않은 형식으로 입력했습니다. 다시 입력해 주세요.`;
             throw new Error(errorMessage);
         }
     }
