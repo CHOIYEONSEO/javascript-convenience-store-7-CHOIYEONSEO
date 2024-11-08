@@ -45,17 +45,30 @@ class Store {
     // 함수 10줄 넘어감.
     checkExistence(inputs = [], targets = []) {
         inputs.forEach((input) => {
-            input = input[0];
-            const foundInput = targets.find((target) => {
-                return target.isExistence(input);
+            const inputName = input[0];
+            const foundInput = targets.filter((target) => { 
+                return target.isExistence(inputName);
             })
 
-            if (foundInput == undefined) {
+            if (foundInput.length === 0) {
                 const errorMessage = `[ERROR] 존재하지 않는 상품입니다. 다시 입력해 주세요.`;
                 throw new Error(errorMessage);
             }
+
+            this.checkOverStock(input[1], foundInput);
         })
             
+    }
+
+    checkOverStock(input, targets = []) {
+        const stockNumber = targets.reduce((acc, cur) => {
+            return acc + cur.quantity;
+        }, 0);
+        
+        if (input > stockNumber) {
+            const errorMessage = `[ERROR] 재고 수량을 초과하여 구매할 수 없습니다. 다시 입력해 주세요.`;
+            throw new Error(errorMessage);
+        }
     }
 
 
