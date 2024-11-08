@@ -3,7 +3,7 @@ import Product from "./Model/Product.js";
 import {Console} from "@woowacourse/mission-utils";
 import Store from "./Controller/Store.js";
 import readFile from "./Model/readFile.js";
-//import promotionManage from "./Model/promotionManage.js";
+import promotionManage from "./Model/promotionManage.js";
 
 const PRODUCTS_FILE_PATH = "public/products.md";
 const PROMOTIONS_FILE_PATH = "public/promotions.md";
@@ -15,8 +15,12 @@ class App {
         const promotionsData = readFile(PROMOTIONS_FILE_PATH, READ_OPTION);
         const products = productsData.map((element) => {
             const splitElement = element.split(",");
-            return new Product(...splitElement);
-        })
+            const availablePromotion = promotionManage(promotionsData);
+
+            if (availablePromotion.includes(splitElement[3])) {
+                return new Product(...splitElement);
+            }
+        }).filter(element => element);
 
         const store = new Store(products);
         store.open();
