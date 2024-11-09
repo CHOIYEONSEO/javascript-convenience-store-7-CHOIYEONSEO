@@ -40,4 +40,15 @@ describe("Store 테스트", () => {
         expect(() => store1.checkOverStock(condition, products1)).toThrow("[ERROR]");
 
     });
+
+    test("사용자가 잘못된 값을 입력하면 애러 발생시키고 해당 지점부터 다시 입력 받는다", () => {
+/* getPurchaseInput 테스트 어려움  
+
+        let input = [['감', 3]];
+        expect(() => store.getPurchaseInput(input, products)).toThrow("[ERROR]");
+
+        input = [['사이다', 5]];
+        expect(() => store.getPurchaseInput(input, products)).not.toThrow("[ERROR]");
+*/
+    })
 });

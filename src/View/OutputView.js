@@ -46,6 +46,7 @@ class OutputView {
 
     printError(error) {
         Console.print(error.message);
+        this.blankLine();
     }
 
 }

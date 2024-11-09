@@ -22,7 +22,7 @@ class Store {
     }
 
     async getPurchaseInput() {
-        //while (true) {
+        while (true) {
             let input = await this.#inputView.buy();
 
             try {
@@ -39,7 +39,7 @@ class Store {
             } catch (error) {
                 this.#outputView.printError(error);
             }
-        //}
+        }
     }
 
     // 함수 10줄 넘어감.
