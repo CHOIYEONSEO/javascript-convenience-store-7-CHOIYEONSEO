@@ -26,4 +26,24 @@ describe("상품 기능 테스트", () => {
         expect(`${product1}`).toBe("콜라,1000,8,탄산2+1\n");
         expect(`${product2}`).toBe("콜라,1000,10,탄산2+1\n");
     })
+
+    test("구매할 상품명과 프로모션 여부가 같으면 입력된 개수만큼 해당 상품 재고를 차감한다", () => {
+        expect(product2.quantity).toBe(10);
+
+        product2.purchase('콜라', 10, true);
+        expect(product2.quantity).toBe(0);
+    })
+
+    test("구매할 상품명과 프로모션 여부가 같지 않으면 입력된 개수만큼 해당 상품 재고를 차감하지 않는다", () => {
+        expect(product1.quantity).toBe(8);
+
+        product1.purchase('콜라', 10, false);
+        expect(product1.quantity).toBe(8);
+
+        product1.purchase('사이다', 10, false);
+        expect(product1.quantity).toBe(8);
+
+        product1.purchase('사이다', 10, true);
+        expect(product1.quantity).toBe(8);
+    })
 });

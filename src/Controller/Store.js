@@ -18,7 +18,9 @@ class Store {
 
     async open() {
         this.#outputView.initial(this.products);
-        const purchase = await this.getPurchaseInput();
+        const demand = await this.getPurchaseInput();
+        this.purchase(demand);
+        
     }
 
     async getPurchaseInput() {
@@ -70,6 +72,34 @@ class Store {
             throw new Error(errorMessage);
         }
     }
+
+    purchase(inputs = []) {
+        inputs.forEach(input => {
+            const demandProduct = input[0];
+            const demandNumber = input[1];
+
+            const condition = this.isPromotion(demandProduct);
+
+            this.products.forEach((product) => {
+                product.purchase(demandProduct, demandNumber, condition);
+            })
+        })
+    }
+
+    isPromotion(purchaseProduct) { //isPromotion? whatPromotion?
+        const filtered = this.products.filter(product => product.name == purchaseProduct);
+        
+        const isPromotion = filtered.some((filter) => {
+            if (filter.promotion !== 'null') {
+                return true;
+            }
+            return false;
+        })
+
+        return isPromotion;
+    }
+
+    
 
 
 }

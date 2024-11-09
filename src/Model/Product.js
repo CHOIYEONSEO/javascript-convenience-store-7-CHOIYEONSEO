@@ -23,6 +23,14 @@ class Product {
         return this.name === input;
     }
 
+    purchase(purchaseProduct, purchaseNumber, isPromotion) {
+        const condition = this.promotion !== 'null';
+
+        if (this.name == purchaseProduct && condition == isPromotion) {
+            this.decreaseQuantity(purchaseNumber);
+        }
+    }
+
 
 }
 

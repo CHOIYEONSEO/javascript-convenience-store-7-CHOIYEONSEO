@@ -13,6 +13,11 @@ const products1 = [
 ];
 const store1 = new Store(products1);
 
+const products2 = [
+    new Product("콜라", 1000, 10, "탄산2+1"),
+    new Product("사이다", 1000, 8, "null")
+];
+const store2 = new Store(products2);
 
 describe("Store 테스트", () => {
     test("존재하는 상품을 입력하면 에러가 발생하지 않는다", () => {
@@ -50,5 +55,35 @@ describe("Store 테스트", () => {
         input = [['사이다', 5]];
         expect(() => store.getPurchaseInput(input, products)).not.toThrow("[ERROR]");
 */
+    })
+
+    test("구매할 상품이 프로모션 상품일 때 true를 반환한다", () => {
+        const purchaseProduct = '콜라';
+
+        expect(store1.isPromotion(purchaseProduct)).toBe(true);
+    })
+
+    test("구매할 상품이 프로모션 상품이면 프로모션 재고를 차감한다", () => {
+        const purchaseProducts = [['콜라', 5]];
+
+        store1.purchase(purchaseProducts)
+
+        expect(store1.products[0].quantity).toBe(5);
+        expect(store1.products[1].quantity).toBe(8);
+    })
+
+    test("구매할 상품이 프로모션 상품이 아니면 false를 반환한다", () => {
+        const purchaseProduct = '사이다';
+
+        expect(store2.isPromotion(purchaseProduct)).toBe(false);
+    })
+
+    test("구매할 상품이 프로모션 상품이 아니면 일반 재고를 차감한다", () => {
+        const purchaseProducts = [['사이다', 5]];
+
+        store2.purchase(purchaseProducts)
+
+        expect(store2.products[0].quantity).toBe(10);
+        expect(store2.products[1].quantity).toBe(3);
     })
 });
