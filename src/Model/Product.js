@@ -31,6 +31,12 @@ class Product {
         }
     }
 
+    findByName(value) {
+        if (this.name == value) {
+            return this;
+        }
+    }
+
 
 }
 

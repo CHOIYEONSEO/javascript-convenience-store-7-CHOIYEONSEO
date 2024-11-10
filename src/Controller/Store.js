@@ -83,15 +83,36 @@ class Store {
         let demandNumber = input[1];
 
         const condition = this.isPromotion(demandProduct);
+        const targetProducts = this.products.map((product) => product.findByName(demandProduct)).filter(element => element);;
 
         if (condition) {
             demandNumber = await this.checkPromotionStock(demandProduct, demandNumber);
         }
 
-        this.products.forEach((product) => {
+        if (targetProducts.length == 2) {
+            const promotionStock = targetProducts[0].quantity;
+            if (promotionStock < demandNumber) {
+                targetProducts[0].purchase(demandProduct, promotionStock, condition);
+                targetProducts[1].purchase(demandProduct, demandNumber - promotionStock, false);
+                return;
+            }
+        }
+
+        targetProducts.forEach((product) => {
             product.purchase(demandProduct, demandNumber, condition);
         })
 
+        /*
+        this.products.forEach((product) => {
+            if (condition && product.quantity < demandNumber) {
+                const overNumber = demandNumber - product.quantity
+                product.purchase(demandProduct, product.quantity, condition);
+                product.purchase(demandProduct, overNumber, false);
+            } else { // else 지양
+                product.purchase(demandProduct, demandNumber, condition);
+            }
+        })
+            */
     }
 
     isPromotion(purchaseProduct) { //isPromotion? whatPromotion?

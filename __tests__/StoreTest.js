@@ -195,18 +195,6 @@ describe("Store 테스트", () => {
         expect(await store3.checkCase(...value)).toBe(3);
     })
 
-    test("재고보다 많은 개수를 사려고 하면 lackStock 실행, 재고보다 적은 개수 사려고 하면 properStock 실행", async () => {
-        let value = ["콜라", 15]; // 2+1할인, 재고 10개
-
-        mockInputView.applyRegular.mockResolvedValueOnce("N");
-        expect(await store4.checkPromotionStock(...value)).toBe(9);
-
-        value = ["콜라", 5];
-
-        mockInputView.getMore.mockResolvedValueOnce("N");
-        expect(await store4.checkPromotionStock(...value)).toBe(5);
-    })
-
     test("2+1할인 상품, 재고 4개보다 원하는 개수가 많은 경우 정가 결제 의사 묻고 구매할 개수 반환", async () => {
         const promotion = promotions.find(p => p.name === "탄산2+1");
         const value = [promotion, 4, "콜라", 10];
@@ -250,5 +238,34 @@ describe("Store 테스트", () => {
         expect(await store4.lackStock(...value)).toBe(2);
     })
 
+    test("재고보다 많은 개수를 사려고 하면 lackStock 실행, 재고보다 적은 개수 사려고 하면 properStock 실행", async () => {
+        let value = ["콜라", 15]; // 2+1할인, 재고 10개
+
+        mockInputView.applyRegular.mockResolvedValueOnce("N");
+        expect(await store4.checkPromotionStock(...value)).toBe(9);
+
+        value = ["콜라", 5];
+
+        mockInputView.getMore.mockResolvedValueOnce("N");
+        expect(await store4.checkPromotionStock(...value)).toBe(5);
+    })
+
+    test("프로모션 재고보다 많은 개수를 사려고 하면 부족한만큼 일반 재고를 차감한다", async () => {
+        const product = ["콜라", 15]; // 2+1할인, 프로모션 재고 10, 일반 재고 8
+
+        await store4.purchase(product);
+
+        expect(store4.products[0].quantity).toBe(0);
+        expect(store4.products[1].quantity).toBe(3);
+    })
+
+    test("프로모션 재고보다 많은 개수 사지 않으면 일반 재고를 차감하지않는다", async () => {
+        const product = ["사이다", 3]; // 1+1할인, 프로모션 재고 3, 일반 재고 5
+
+        await store4.purchase(product);
+
+        expect(store4.products[2].quantity).toBe(0);
+        expect(store4.products[3].quantity).toBe(5);
+    })
 
 });

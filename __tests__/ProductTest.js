@@ -15,6 +15,12 @@ describe("상품 기능 테스트", () => {
 
     });
 
+    test.each(["콜라"])("상품 이름이 %s이면 해당 상품을 반환한다", (condition) => {
+        if (product1.name == condition) {
+            expect(product1.findByName(condition)).toEqual({"name":"콜라", "price": 1000, "promotion": "탄산2+1", "quantity": 10});
+        }
+    })
+
     test("상품을 구매할 때마다, 결제된 수량만큼 해당 상품의 재고에서 차감하여 수량을 관리한다.", () => {
         const BUY_NUMBER = [2];
 
