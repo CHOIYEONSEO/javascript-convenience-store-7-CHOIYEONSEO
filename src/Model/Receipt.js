@@ -1,13 +1,16 @@
+const MEMBERSHIP_PERCENT = 0.3;
+
 class Receipt {
     #products; // array[[상품명, 수량, 금액]]
     #free; // array[[상품명, 수량, 금액]]
+    #regular; // array[[상품명, 수량]] : 프로모션 미적용 구매상품
     #price; // array[총구매수량, 총구매액, 행사할인, 멤버십할인, 내실돈]
-
 
     constructor() {
         this.#products = [];
         this.#free = [];
-        this.#price = this.setPrice();
+        this.#regular = [];
+        this.#price = [];
     }
 
     setProducts(name, number, price) {
@@ -28,12 +31,22 @@ class Receipt {
         return this.#free;
     }
 
-    setPrice() {
+    setRegular(name, number) {
+        this.#regular.push([name, number]);
+    }
+
+    getRegular() {
+        return this.#regular;
+    }
+
+    setPrice(membershipIntention) {
         const totalNumber = this.getTotalNumber();
         const totalPrice = this.getTotalPrice();
         const promotionPrice = this.getPromotionPrice();
+        const membershipPrice = this.setMembershipPrice(membershipIntention);
 
-        return [totalNumber, totalPrice, promotionPrice];
+        
+        this.#price.push(totalNumber, totalPrice, promotionPrice, membershipPrice);
     }
 
     getTotalNumber() {
@@ -58,6 +71,43 @@ class Receipt {
         }, 0);
 
         return promotionPrice;
+    }
+
+    setMembershipPrice(intention) {
+        if (intention == "Y") {
+            return this.getMembershipPrice();
+        } 
+
+        return 0;
+    }
+
+    getMembershipPrice() {
+        const membershipPrice = this.getRegularPrice() * MEMBERSHIP_PERCENT;
+
+        if (membershipPrice > 8000) {
+            return 8000;
+        }
+
+        return membershipPrice;
+    }
+
+    getRegularPrice() {
+        const regularPrice = this.#regular.reduce((acc, cur) => {
+            const price = this.findByName(cur[0])[2];
+            return acc + cur[1] * price;
+        }, 0);
+
+        return regularPrice;
+    }
+
+    findByName(name) {
+        const found = this.#products.find((product) => {
+            if (product[0] == name) {
+                return product;
+            }
+        })
+
+        return found;
     }
 }
 

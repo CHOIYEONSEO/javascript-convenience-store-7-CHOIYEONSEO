@@ -33,9 +33,20 @@ const products3 = [
     new Product("사이다", 1000, 5, "null"),
 ];
 
+const products4 = [
+    new Product("콜라", 1000, 10, "탄산2+1"),
+    new Product("콜라", 1000, 8, "null"),
+    new Product("사이다", 1000, 3, "반짝할인"),
+    new Product("사이다", 1000, 5, "null"),
+    new Product("물", 800, 8, "null"),
+];
+
+const receipt = new Receipt();
+
 describe("Store 테스트", () => {
     let store3;
     let store4;
+    let store5;
     let mockInputView;
 
     beforeEach(() => {
@@ -47,6 +58,7 @@ describe("Store 테스트", () => {
 
         store3 = new Store(products2, promotions, mockInputView);
         store4 = new Store(products3, promotions, mockInputView);
+        store5 = new Store(products4, promotions, mockInputView, undefined, receipt);
     });
 
     // store
@@ -267,9 +279,6 @@ describe("Store 테스트", () => {
         expect(store4.products[3].quantity).toBe(5);
     })
 
-    const receipt = new Receipt();
-    const store5 = new Store(products3, promotions, undefined, undefined, receipt);
-
     test.each([[3,1]])("2+1할인 상품을 %s개 구매할 경우 영수증의 증정 상품 내역에 %s개가 증정됨을 추가한다", (purchase, free) => {
         store5.freeSummary(products3[0], purchase);
         expect(receipt.getFree()).toEqual([["콜라", free, 1000]]);
@@ -284,4 +293,34 @@ describe("Store 테스트", () => {
         store5.freeSummary(products3[0], 2);
         expect(receipt.getFree()).toEqual([["콜라", 1, 1000], ["사이다", 1, 1000]]);
     })
+
+    test("할인 상품이고 충분한 프로모션 재고가 있으면 프로모션 미적용 상품이 아니다", async () => {
+        const purchaseProduct = ['콜라', 5];
+        expect(store5.products[0].quantity).toBe(10);
+
+        mockInputView.getMore.mockResolvedValueOnce("Y");
+        await store5.purchase(purchaseProduct);
+
+        expect(receipt.getRegular.length).toBe(0);
+    })
+
+    test("할인 상품이고 프로모션 재고가 부족하면 부족한 수만큼 프로모션 미적용에 해당한다", async () => {
+        const purchaseProduct = ['콜라', 10];
+        expect(store5.products[0].quantity).toBe(4);
+        expect(store5.products[1].quantity).toBe(8);
+
+        mockInputView.applyRegular.mockResolvedValueOnce("Y");
+        await store5.purchase(purchaseProduct);
+
+        expect(receipt.getRegular()).toEqual([["콜라", 7]]);
+    })
+
+    test("할인 상품이 아니면 프로모션 미적용에 해당한다", async () => {
+        const purchaseProduct = ['물', 5];
+        expect(store5.products[4].quantity).toBe(8);
+        await store5.purchase(purchaseProduct);
+
+        expect(receipt.getRegular()).toEqual([["콜라", 7], ["물", 5]]);
+    })
+
 });

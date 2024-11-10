@@ -33,7 +33,9 @@ class Store {
     }
 
     async membership() {
-        const input = await this.#inputView.applyMembership();
+        const input = await this.#inputView.applyMembership(); // input 유효성 체크 필요
+
+        this.#receipt.setPrice(input);
 
         return input;
     }
@@ -115,6 +117,7 @@ class Store {
         targetProduct.purchase(demandProduct, demandNumber, condition);
         this.#receipt.setProducts(demandProduct, demandNumber, targetProduct.price);
         this.freeSummary(targetProduct, demandNumber);
+        this.regularSummary(targetProduct, demandNumber);
     }
 
     freeSummary(product, demandNumber) {
@@ -123,6 +126,12 @@ class Store {
             const freeNumber = promotion.calculateFree(demandNumber);
     
             this.#receipt.setFree(product.name, freeNumber, product.price);
+        }
+    }
+
+    regularSummary(product, demandNumber) {
+        if (product.promotion == "null") {
+            this.#receipt.setRegular(product.name, demandNumber);
         }
     }
 
@@ -215,6 +224,7 @@ class Store {
             return purchaseNumber - overNumber;
         }
 
+        this.#receipt.setRegular(product, overNumber);
         return purchaseNumber;
     }
     
