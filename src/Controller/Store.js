@@ -25,7 +25,14 @@ class Store {
         for (const element of demand) {
             await this.purchase(element);
         }
-        
+
+        const membershipIntention = await this.membership();
+    }
+
+    async membership() {
+        const input = await this.#inputView.applyMembership();
+
+        return input;
     }
 
     async getPurchaseInput() {
