@@ -28,8 +28,9 @@ class Store {
         for (const element of demand) {
             await this.purchase(element);
         }
-
-        const membershipIntention = await this.membership();
+        
+        await this.membership();
+        //const membershipIntention = await this.membership();
     }
 
     async membership() {
@@ -37,7 +38,7 @@ class Store {
 
         this.#receipt.setPrice(input);
 
-        return input;
+        //return input;
     }
 
     async getPurchaseInput() {

@@ -44,9 +44,13 @@ class Receipt {
         const totalPrice = this.getTotalPrice();
         const promotionPrice = this.getPromotionPrice();
         const membershipPrice = this.setMembershipPrice(membershipIntention);
+        const finalPrice = totalPrice - promotionPrice - membershipPrice;
+    
+        this.#price.push(totalNumber, totalPrice, promotionPrice, membershipPrice, finalPrice);
+    }
 
-        
-        this.#price.push(totalNumber, totalPrice, promotionPrice, membershipPrice);
+    getPrice() {
+        return this.#price;
     }
 
     getTotalNumber() {

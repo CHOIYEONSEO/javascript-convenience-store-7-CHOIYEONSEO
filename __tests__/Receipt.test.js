@@ -1,6 +1,7 @@
 import Receipt from "../src/Model/Receipt.js";
 
 const receipt = new Receipt();
+const receipt1 = new Receipt();
 
 describe("Receipt 테스트", () => {
     test("구매 상품 내역을 추가한다", () => {
@@ -38,6 +39,17 @@ describe("Receipt 테스트", () => {
         expect(receipt.getRegular()).toEqual([value1, value2]);
     })
 
+    test("총구매액, 행사할인, 멤버십할인, 최종 결제 금액을 영수증의 금액 정보에 추가한다", () => {
+        expect(receipt.getTotalPrice()).toBe(16900);
+        expect(receipt.getPromotionPrice()).toBe(4500);
+        expect(receipt.setMembershipPrice("Y")).toBe(2820);
+        const final = 9580;
+
+        receipt.setPrice("Y");
+
+        expect(receipt.getPrice()).toEqual([13, 16900, 4500, 2820, final]);
+    })
+
     // receipt의 구매 상품 내역 : [["사이다", 5, 1000], ["콜라", 3, 1700], ["물", 3, 1400]], ["탄산수", 2, 1300]
     test("총 구매 수량을 반환한다", () => {
         expect(receipt.getTotalNumber()).toBe(13);
@@ -52,9 +64,27 @@ describe("Receipt 테스트", () => {
         expect(receipt.getPromotionPrice()).toBe(4500);
     })
 
+    test("프로모션 적용 상품이 없을 때 0을 반환한다", () => {
+        const value1 = ["사이다", 5, 1000];
+        const value2 = ["콜라", 3, 1700];
+        const value3 = ["물", 3, 1400];
+        const value4 = ["탄산수", 2, 1300];
+        receipt1.setProducts(...value1);
+        receipt1.setProducts(...value2);
+        receipt1.setProducts(...value3);
+        receipt1.setProducts(...value4);
+
+        expect(receipt1.getProducts()).toEqual([value1, value2, value3, value4]);
+        expect(receipt1.getPromotionPrice()).toBe(0);
+    })
+
     // receipt의 프로모션 미적용 구매상품 내역 : [["콜라", 4],["탄산수", 2]]
     test("프로모션 미적용 금액을 반환한다", () => {
         expect(receipt.getRegularPrice()).toBe(9400);
+    })
+
+    test("프로모션 미적용 상품이 없으면 0을 반환한다", () => {
+        expect(receipt1.getRegularPrice()).toBe(0);
     })
 
     test("멤버십 할인 금액을 계산한다", () => {
