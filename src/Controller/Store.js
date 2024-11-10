@@ -105,6 +105,7 @@ class Store {
                 targetProducts[0].purchase(demandProduct, promotionStock, condition);
                 targetProducts[1].purchase(demandProduct, demandNumber - promotionStock, false);
                 this.#receipt.setProducts(demandProduct, demandNumber, targetProducts[0].price);
+                this.freeSummary(targetProducts[0], promotionStock);
                 return;
             }
         }
@@ -113,15 +114,16 @@ class Store {
 
         targetProduct.purchase(demandProduct, demandNumber, condition);
         this.#receipt.setProducts(demandProduct, demandNumber, targetProduct.price);
+        this.freeSummary(targetProduct, demandNumber);
+    }
 
-        /*
-        targetProducts.forEach((product) => {
-            product.purchase(demandProduct, demandNumber, condition);
-            this.#receipt.setProducts(demandProduct, demandNumber, product.price);
-        })
-        */
-
-
+    freeSummary(product, demandNumber) {
+        if (product.promotion !== "null") {
+            const promotion = this.#promotions.find(promotion => promotion.findByName(product.promotion));
+            const freeNumber = promotion.calculateFree(demandNumber);
+    
+            this.#receipt.setFree(product.name, freeNumber, product.price);
+        }
     }
 
     isPromotion(purchaseProduct) { //isPromotion? whatPromotion?

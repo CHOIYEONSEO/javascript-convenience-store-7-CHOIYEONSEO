@@ -1,8 +1,7 @@
 import Store from "../src/Controller/Store.js";
 import Product from "../src/Model/Product.js";
 import Promotion from "../src/Model/Promotion.js";
-import InputView from "../src/View/InputView.js";
-import OutputView from "../src/View/OutputView.js";
+import Receipt from "../src/Model/Receipt.js";
 
 const promotions = [
     new Promotion("탄산2+1", "2", "1", "2024-01-01", "2024-12-31"),
@@ -95,14 +94,14 @@ describe("Store 테스트", () => {
         expect(store1.isPromotion(purchaseProduct)).toBe(true);
     })
 
-    test("구매할 상품이 프로모션 상품이면 프로모션 재고를 차감한다", async () => {
+     test("구매할 상품이 프로모션 상품이면 프로모션 재고를 차감한다", async () => {
         const purchaseProduct = ['콜라', 6];
 
         await store1.purchase(purchaseProduct);
 
         expect(store1.products[0].quantity).toBe(4);
         expect(store1.products[1].quantity).toBe(8);
-    })
+    }) 
 
     // store2
     test("구매할 상품이 프로모션 상품이 아니면 false를 반환한다", () => {
@@ -111,7 +110,7 @@ describe("Store 테스트", () => {
         expect(store2.isPromotion(purchaseProduct)).toBe(false);
     })
 
-    test("구매할 상품이 프로모션 상품이 아니면 일반 재고를 차감한다", () => {
+     test("구매할 상품이 프로모션 상품이 아니면 일반 재고를 차감한다", () => {
         const purchaseProduct = ['사이다', 5];
 
         store2.purchase(purchaseProduct);
@@ -151,7 +150,7 @@ describe("Store 테스트", () => {
         expect(returnValue).toBe(0);
     })
 
-    test("2+1 상품을 2개만 가져온 경우 1개를 더 추가하지 않고 재고를 차감한다", async () => {
+     test("2+1 상품을 2개만 가져온 경우 1개를 더 추가하지 않고 재고를 차감한다", async () => {
         const product = ["콜라", 2];
 
         mockInputView.getMore.mockResolvedValueOnce("N");
@@ -160,7 +159,7 @@ describe("Store 테스트", () => {
         expect(store3.products[0].quantity).toBe(8);
     })
 
-    test("2+1 상품을 2개만 가져온 경우 1개를 더 추가해서 재고를 차감한다", async () => {
+     test("2+1 상품을 2개만 가져온 경우 1개를 더 추가해서 재고를 차감한다", async () => {
         const product = ["콜라", 2];
 
         mockInputView.getMore.mockResolvedValueOnce("Y");
@@ -250,7 +249,7 @@ describe("Store 테스트", () => {
         expect(await store4.checkPromotionStock(...value)).toBe(5);
     })
 
-    test("프로모션 재고보다 많은 개수를 사려고 하면 부족한만큼 일반 재고를 차감한다", async () => {
+     test("프로모션 재고보다 많은 개수를 사려고 하면 부족한만큼 일반 재고를 차감한다", async () => {
         const product = ["콜라", 15]; // 2+1할인, 프로모션 재고 10, 일반 재고 8
 
         await store4.purchase(product);
@@ -259,7 +258,7 @@ describe("Store 테스트", () => {
         expect(store4.products[1].quantity).toBe(3);
     })
 
-    test("프로모션 재고보다 많은 개수 사지 않으면 일반 재고를 차감하지않는다", async () => {
+     test("프로모션 재고보다 많은 개수 사지 않으면 일반 재고를 차감하지않는다", async () => {
         const product = ["사이다", 3]; // 1+1할인, 프로모션 재고 3, 일반 재고 5
 
         await store4.purchase(product);
@@ -268,4 +267,21 @@ describe("Store 테스트", () => {
         expect(store4.products[3].quantity).toBe(5);
     })
 
+    const receipt = new Receipt();
+    const store5 = new Store(products3, promotions, undefined, undefined, receipt);
+
+    test.each([[3,1]])("2+1할인 상품을 %s개 구매할 경우 영수증의 증정 상품 내역에 %s개가 증정됨을 추가한다", (purchase, free) => {
+        store5.freeSummary(products3[0], purchase);
+        expect(receipt.getFree()).toEqual([["콜라", free, 1000]]);
+    })
+
+    test.each([[3,1]])("1+1할인 상품을 %s개 구매할 경우 영수증의 증정 상품 내역에 %s개가 증정됨을 추가한다", (purchase, free) => {
+        store5.freeSummary(products3[2], purchase);
+        expect(receipt.getFree()).toEqual([["콜라", 1, 1000], ["사이다", free, 1000]]);
+    })
+
+    test("증정품이 0개일 경우에는 영수증의 증정 상품내역에 추가하지 않는다", () => {
+        store5.freeSummary(products3[0], 2);
+        expect(receipt.getFree()).toEqual([["콜라", 1, 1000], ["사이다", 1, 1000]]);
+    })
 });

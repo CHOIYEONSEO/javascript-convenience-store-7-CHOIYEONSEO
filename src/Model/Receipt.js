@@ -18,8 +18,14 @@ class Receipt {
         return this.#products;
     }
 
-    setFree() {
+    setFree(name, number, price) {
+        if (number > 0) {
+            this.#free.push([name, number, price]);
+        }
+    }
 
+    getFree() {
+        return this.#free;
     }
 
     setPrice() {

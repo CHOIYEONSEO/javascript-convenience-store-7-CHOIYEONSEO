@@ -74,6 +74,13 @@ class Promotion {
 
         return remainder;
     }
+
+    calculateFree(value) {
+        const total = this.#buy + this.#get;
+        const free = Math.floor(value / total) * this.#get;
+
+        return free;
+    }
 }
 
 export default Promotion;

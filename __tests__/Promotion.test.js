@@ -68,4 +68,12 @@ describe("Promotion 테스트", () => {
     test.each([1,2,3,4,5,6])("1+1 할인일 때 재고가 %s개인 경우", (condition) => {
         expect(promotion2.calculateStock(condition)).toBe(0);
     })
+
+    test.each([[1, 0], [3, 1], [4, 1], [5, 1], [6, 2]])("2+1 할인일 때 구매 개수가 %s개인 경우", (purchase, free) => {
+        expect(promotion3.calculateFree(purchase)).toBe(free);
+    })
+
+    test.each([[1, 0], [2, 1], [3, 1], [4, 2]])("1+1 할인일 때 구매 개수가 %s개인 경우", (purchase, free) => {
+        expect(promotion2.calculateFree(purchase)).toBe(free);
+    })
 })
