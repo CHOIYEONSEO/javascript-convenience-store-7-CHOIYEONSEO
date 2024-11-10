@@ -4,18 +4,21 @@ import InputView from "../View/InputView.js";
 import OutputView from "../View/OutputView.js";
 import Validator from "../Model/Validator.js";
 import {Console} from "@woowacourse/mission-utils";
+import Receipt from "../Model/Receipt.js";
 
 class Store {
     #inputView;
     #outputView;
     products;
     #promotions;
+    #receipt;
 
-    constructor(products, promotions, inputView = new InputView(), outputView = new OutputView(), ) {
+    constructor(products, promotions, inputView = new InputView(), outputView = new OutputView(), receipt = new Receipt()) {
         this.#inputView = inputView;
         this.#outputView = outputView;
         this.products = products;  // 리팩토링 시 app.js에 있는 products[] 생성 코드 여기로 가져오기
         this.#promotions = promotions;
+        this.#receipt = receipt;
     }
 
     async open() {
@@ -101,25 +104,24 @@ class Store {
             if (promotionStock < demandNumber) {
                 targetProducts[0].purchase(demandProduct, promotionStock, condition);
                 targetProducts[1].purchase(demandProduct, demandNumber - promotionStock, false);
+                this.#receipt.setProducts(demandProduct, demandNumber, targetProducts[0].price);
                 return;
             }
         }
 
-        targetProducts.forEach((product) => {
-            product.purchase(demandProduct, demandNumber, condition);
-        })
+        const targetProduct = this.products.find((product) => product.find(demandProduct, condition));
+
+        targetProduct.purchase(demandProduct, demandNumber, condition);
+        this.#receipt.setProducts(demandProduct, demandNumber, targetProduct.price);
 
         /*
-        this.products.forEach((product) => {
-            if (condition && product.quantity < demandNumber) {
-                const overNumber = demandNumber - product.quantity
-                product.purchase(demandProduct, product.quantity, condition);
-                product.purchase(demandProduct, overNumber, false);
-            } else { // else 지양
-                product.purchase(demandProduct, demandNumber, condition);
-            }
+        targetProducts.forEach((product) => {
+            product.purchase(demandProduct, demandNumber, condition);
+            this.#receipt.setProducts(demandProduct, demandNumber, product.price);
         })
-            */
+        */
+
+
     }
 
     isPromotion(purchaseProduct) { //isPromotion? whatPromotion?

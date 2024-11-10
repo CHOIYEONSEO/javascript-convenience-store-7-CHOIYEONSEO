@@ -37,6 +37,15 @@ class Product {
         }
     }
 
+    // isPromotion : 프로모션 적용이면 true / 아니면 false
+    find(name, isPromotion) {
+        const condition = this.promotion !== 'null' // 프로모션 적용이면 true / 아니면 false
+
+        if (this.name == name && condition == isPromotion) {
+            return this;
+        }
+    }
+
 
 }
 
