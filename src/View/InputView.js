@@ -8,6 +8,13 @@ class InputView {
 
         return input;
     }
+
+    async getMore(product, number) {
+        const message = `\n현재 ${product}은(는) ${number}개를 무료로 더 받을 수 있습니다. 추가하시겠습니까? (Y/N)\n`;
+        const input = await Console.readLineAsync(message);
+
+        return input;
+    }
 }
 
 export default InputView;

@@ -30,12 +30,14 @@ class App {
         const products = productsData.map((element) => {
             const splitElement = element.split(",");
 
-            if (availablePromotion.includes(splitElement[3])) {
+            const isInclude = availablePromotion.some(available => available.name == splitElement[3] || available == splitElement[3]);
+
+            if (isInclude) {
                 return new Product(...splitElement);
             }
         }).filter(element => element);
 
-        const store = new Store(products);
+        const store = new Store(products, availablePromotion);
         store.open();
 
         //updateProducts(PRODUCTS_FILE_PATH, products);

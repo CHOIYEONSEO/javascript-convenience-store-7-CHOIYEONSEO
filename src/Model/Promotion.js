@@ -27,7 +27,7 @@ class Promotion {
             const {year, month, date} = this.splitDate(this.#endDate);
 
             if (TODAY_YEAR <= year && TODAY_MONTH <= month && TODAY_DATE <= date) {
-                return this.name;
+                return this;
             }
         }
     }
@@ -39,6 +39,27 @@ class Promotion {
         const date = Number(splitValue[2]);
 
         return {year, month, date};
+    }
+
+    findByName(value) {
+        if (this.name == value) {
+            return this;
+        }
+    }
+
+    calculateMore(value) {
+        const total = this.#buy + this.#get;
+        const remainder = value % total;
+
+        if (value < this.#buy) {
+            return 0;
+        }
+
+        if (remainder !== 0) {
+            return total - remainder;
+        }
+
+        return 0;
     }
 }
 

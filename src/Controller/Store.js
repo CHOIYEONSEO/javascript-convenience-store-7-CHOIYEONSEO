@@ -9,17 +9,22 @@ class Store {
     #inputView;
     #outputView;
     products;
+    #promotions;
 
-    constructor(products) {
-        this.#inputView = new InputView();
-        this.#outputView = new OutputView();
+    constructor(products, promotions, inputView = new InputView(), outputView = new OutputView(), ) {
+        this.#inputView = inputView;
+        this.#outputView = outputView;
         this.products = products;  // 리팩토링 시 app.js에 있는 products[] 생성 코드 여기로 가져오기
+        this.#promotions = promotions;
     }
 
     async open() {
         this.#outputView.initial(this.products);
         const demand = await this.getPurchaseInput();
-        this.purchase(demand);
+        
+        for (const element of demand) {
+            await this.purchase(element);
+        }
         
     }
 
@@ -73,17 +78,24 @@ class Store {
         }
     }
 
-    purchase(inputs = []) {
-        inputs.forEach(input => {
-            const demandProduct = input[0];
-            const demandNumber = input[1];
+    async purchase(input) {
+        const demandProduct = input[0];
+        let demandNumber = input[1];
 
-            const condition = this.isPromotion(demandProduct);
+        const condition = this.isPromotion(demandProduct);
 
-            this.products.forEach((product) => {
-                product.purchase(demandProduct, demandNumber, condition);
-            })
+        if (condition) {
+            const { getMore, addIntention } = await this.checkDemandNumber(demandProduct, demandNumber);
+            if (addIntention == "Y") {
+                demandNumber += getMore;
+            }
+
+        }
+
+        this.products.forEach((product) => {
+            product.purchase(demandProduct, demandNumber, condition);
         })
+
     }
 
     isPromotion(purchaseProduct) { //isPromotion? whatPromotion?
@@ -97,6 +109,28 @@ class Store {
         })
 
         return isPromotion;
+    }
+
+    async checkDemandNumber(demandProduct, demandNumber) {
+        const demandPromotion = this.whatPromotion(demandProduct);
+
+        const promotion = this.#promotions.find(promotion => promotion.findByName(demandPromotion));
+        
+        const getMore = promotion.calculateMore(demandNumber);
+        if (getMore !== 0) {
+            const addIntention = await this.#inputView.getMore(demandProduct, getMore);
+
+            return { getMore, addIntention };
+        }
+        const addIntention = "N";
+
+        return { getMore, addIntention };
+    }
+
+    whatPromotion(demandProduct) {
+        const filtered = this.products.filter(product => product.name == demandProduct && product.promotion !== 'null');
+
+        return filtered[0].promotion;
     }
 
     
