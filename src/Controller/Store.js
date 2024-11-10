@@ -85,11 +85,7 @@ class Store {
         const condition = this.isPromotion(demandProduct);
 
         if (condition) {
-            const { getMore, addIntention } = await this.checkDemandNumber(demandProduct, demandNumber);
-            if (addIntention == "Y") {
-                demandNumber += getMore;
-            }
-
+            demandNumber = await this.checkPromotionStock(demandProduct, demandNumber);
         }
 
         this.products.forEach((product) => {
@@ -111,20 +107,42 @@ class Store {
         return isPromotion;
     }
 
+    async checkPromotionStock(demandProduct, demandNumber) {
+        const promotionStock = this.calculatePromotionStock(demandProduct);
+
+        const demandPromotion = this.whatPromotion(demandProduct); // checkDemandNumber과 중복
+        const promotion = this.#promotions.find(promotion => promotion.findByName(demandPromotion)); // checkDemandNumber과 중복
+
+        if (promotionStock < demandNumber) {
+            return await this.lackStock(promotion, promotionStock, demandProduct, demandNumber);
+        }
+
+        return await this.properStock(demandProduct, demandNumber);
+    }
+
+    async lackStock(promotion, promotionStock, demandProduct, demandNumber) {
+        const remainder = promotion.calculateStock(promotionStock);
+        const overNumber = demandNumber - promotionStock + remainder;
+
+        const purchaseNumber = await this.askApplyRegular(demandProduct, overNumber, demandNumber);
+        
+        return purchaseNumber;
+    }
+
+    async properStock(demandProduct, demandNumber) {
+        const { whatCase, returnValue } = await this.checkDemandNumber(demandProduct, demandNumber);
+
+        const purchaseNumber = await this.checkCase(whatCase, returnValue, demandProduct, demandNumber);
+
+        return purchaseNumber;
+    }
+
     async checkDemandNumber(demandProduct, demandNumber) {
         const demandPromotion = this.whatPromotion(demandProduct);
 
         const promotion = this.#promotions.find(promotion => promotion.findByName(demandPromotion));
         
-        const getMore = promotion.calculateMore(demandNumber);
-        if (getMore !== 0) {
-            const addIntention = await this.#inputView.getMore(demandProduct, getMore);
-
-            return { getMore, addIntention };
-        }
-        const addIntention = "N";
-
-        return { getMore, addIntention };
+        return promotion.calculateMore(demandNumber);
     }
 
     whatPromotion(demandProduct) {
@@ -133,6 +151,40 @@ class Store {
         return filtered[0].promotion;
     }
 
+    calculatePromotionStock(demandProduct) {
+        const filtered = this.products.filter(product => product.name == demandProduct && product.promotion !== 'null');
+
+        return filtered[0].quantity;
+    }
+
+    async checkCase(whatCase, returnValue, product, demandNumber) {
+        switch (whatCase) {
+            case "more":
+                const getMore = await this.#inputView.getMore(product, returnValue); // askGetMore도 분리하기
+
+                if (getMore == "Y") {
+                    return demandNumber += returnValue; // 재고 넘는지 체크
+                }
+
+                return demandNumber;
+            case "regular":
+                const purchaseNumber = await this.askApplyRegular(product, returnValue, demandNumber);
+
+                return purchaseNumber;
+            default:
+                return demandNumber;
+        }
+    }
+
+    async askApplyRegular(product, overNumber, purchaseNumber) {
+        const applyRegular = await this.#inputView.applyRegular(product, overNumber);
+
+        if (applyRegular == "N") {
+            return purchaseNumber - overNumber;
+        }
+
+        return purchaseNumber;
+    }
     
 
 

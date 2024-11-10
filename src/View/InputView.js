@@ -15,6 +15,13 @@ class InputView {
 
         return input;
     }
+
+    async applyRegular(product, number) {
+        const message = `\n현재 ${product} ${number}개는 프로모션 할인이 적용되지 않습니다. 그래도 구매하시겠습니까? (Y/N)\n`;
+        const input = await Console.readLineAsync(message);
+
+        return input;
+    }
 }
 
 export default InputView;

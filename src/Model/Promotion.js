@@ -48,18 +48,31 @@ class Promotion {
     }
 
     calculateMore(value) {
-        const total = this.#buy + this.#get;
-        const remainder = value % total;
+        const remainder = value % (this.#buy + this.#get);
+        let whatCase = "pass";
+        let returnValue = remainder;
 
-        if (value < this.#buy) {
+        if (remainder > 0 && remainder < this.#buy) {
+            whatCase = "regular";
+        }
+
+        if (remainder == this.#buy) {
+            whatCase = "more";
+            returnValue = this.#get;
+        }
+
+        return { whatCase, returnValue };
+    }
+
+    calculateStock(stock) {
+        const total = this.#buy + this.#get;
+        const remainder = stock % total;
+
+        if (remainder == 0 || remainder == this.#buy) {
             return 0;
         }
 
-        if (remainder !== 0) {
-            return total - remainder;
-        }
-
-        return 0;
+        return remainder;
     }
 }
 
