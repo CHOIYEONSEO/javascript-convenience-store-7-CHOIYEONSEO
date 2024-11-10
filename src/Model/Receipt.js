@@ -31,8 +31,9 @@ class Receipt {
     setPrice() {
         const totalNumber = this.getTotalNumber();
         const totalPrice = this.getTotalPrice();
+        const promotionPrice = this.getPromotionPrice();
 
-        return [totalNumber, totalPrice];
+        return [totalNumber, totalPrice, promotionPrice];
     }
 
     getTotalNumber() {
@@ -49,6 +50,14 @@ class Receipt {
         }, 0);
 
         return totalPrice;
+    }
+
+    getPromotionPrice() {
+        const promotionPrice = this.#free.reduce((acc, cur) => {
+            return acc + cur[1] * cur[2];
+        }, 0);
+
+        return promotionPrice;
     }
 }
 
