@@ -55,10 +55,6 @@ class Promotion {
         let whatCase = "pass";
         let returnValue = remainder;
 
-        if (remainder > 0 && remainder < this.#buy) {
-            whatCase = "regular";
-        }
-
         if (remainder == this.#buy) {
             whatCase = "more";
             returnValue = this.#get;

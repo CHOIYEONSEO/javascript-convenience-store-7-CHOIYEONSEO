@@ -36,10 +36,10 @@ describe("Promotion 테스트", () => {
         expect(result.returnValue).toBe(0);
     })
 
-    test.each([1, 4, 7])("2+1 할인일때 %s개를 가져오면 1개에는 프로모션이 적용되지 않으므로 regular과 1을 반환한다", (condition) => {
+    test.each([1, 4, 7])("2+1 할인일때 %s개를 가져오면 1개에는 pass와 1을 반환한다", (condition) => {
         const result = promotion3.calculateMore(condition);
 
-        expect(result.whatCase).toBe("regular");
+        expect(result.whatCase).toBe("pass");
         expect(result.returnValue).toBe(1);
     })
 
