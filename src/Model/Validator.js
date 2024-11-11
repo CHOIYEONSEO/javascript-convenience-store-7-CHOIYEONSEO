@@ -11,6 +11,7 @@ class Validator {
         let formattedInput = this.checkFormat(input);
 
         this.checkDuplicate(formattedInput);
+        this.notZero(formattedInput);
 
         return formattedInput;
     }
@@ -34,6 +35,17 @@ class Validator {
             const errorMessage = `[ERROR] 잘못된 입력입니다. 다시 입력해 주세요.`;
             throw new Error(errorMessage);
         }
+    }
+
+    notZero(inputs = []) {
+        const number = inputs.map(element => element[1]);
+
+        number.forEach((element) => {
+            if (element == 0) {
+                const errorMessage = `[ERROR] 잘못된 입력입니다. 다시 입력해 주세요.`;
+                throw new Error(errorMessage);
+            }
+        })
     }
 
     intention(input) {
