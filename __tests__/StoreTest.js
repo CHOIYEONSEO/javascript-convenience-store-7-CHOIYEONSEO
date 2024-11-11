@@ -1,4 +1,4 @@
-import Store from "../src/Controller/Store.js";
+ import Store from "../src/Controller/Store.js";
 import Product from "../src/Model/Product.js";
 import Promotion from "../src/Model/Promotion.js";
 import Receipt from "../src/Model/Receipt.js";
@@ -54,6 +54,8 @@ describe("Store 테스트", () => {
             buy: jest.fn(),
             getMore: jest.fn(),
             applyRegular: jest.fn(),
+            applyMembership: jest.fn(),
+            additional: jest.fn(),
         };
 
         store3 = new Store(products2, promotions, mockInputView);
@@ -77,15 +79,15 @@ describe("Store 테스트", () => {
     });
 
     test("사용자가 잘못된 값을 입력하면 애러 발생시키고 해당 지점부터 다시 입력 받는다", () => {
-        /* getPurchaseInput 테스트 어려움  
+        // getPurchaseInput 테스트 어려움  
         
-                let input = [['감', 3]];
-                expect(() => store.getPurchaseInput(input, products)).toThrow("[ERROR]");
+        //        let input = [['감', 3]];
+        //        expect(() => store.getPurchaseInput(input, products)).toThrow("[ERROR]");
         
-                input = [['사이다', 5]];
-                expect(() => store.getPurchaseInput(input, products)).not.toThrow("[ERROR]");
-        */
-            })
+        //        input = [['사이다', 5]];
+        //        expect(() => store.getPurchaseInput(input, products)).not.toThrow("[ERROR]");
+        
+    })
 
     // store 1
     test.each([18, 10])("구매 수량(%s)이 재고 수량을 초과하지 않으면 에러가 발생하지 않는다", (condition) => {
@@ -264,6 +266,8 @@ describe("Store 테스트", () => {
      test("프로모션 재고보다 많은 개수를 사려고 하면 부족한만큼 일반 재고를 차감한다", async () => {
         const product = ["콜라", 15]; // 2+1할인, 프로모션 재고 10, 일반 재고 8
 
+        mockInputView.applyRegular.mockResolvedValueOnce("Y");
+        
         await store4.purchase(product);
 
         expect(store4.products[0].quantity).toBe(0);
@@ -271,11 +275,14 @@ describe("Store 테스트", () => {
     })
 
      test("프로모션 재고보다 많은 개수 사지 않으면 일반 재고를 차감하지않는다", async () => {
-        const product = ["사이다", 3]; // 1+1할인, 프로모션 재고 3, 일반 재고 5
+        const product = ["사이다", 2]; // 1+1할인, 프로모션 재고 3, 일반 재고 5
+        expect(store4.products[2].quantity).toBe(3);
+        expect(store4.products[3].quantity).toBe(5);
+        expect(store4.products[2].promotion).toBe("반짝할인");
 
         await store4.purchase(product);
 
-        expect(store4.products[2].quantity).toBe(0);
+        expect(store4.products[2].quantity).toBe(1);
         expect(store4.products[3].quantity).toBe(5);
     })
 

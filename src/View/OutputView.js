@@ -6,16 +6,11 @@ const PRICE_LENGTH = 6;
 const FILL_BY = "\t";
 
 class OutputView {
-    blankLine() {
-        Console.print("");
-    }
-
     initial(products) {
         this.welcome();
         products.forEach(element => {
             this.stock(element.name, element.price, element.quantity, element.promotion);
         });
-        this.blankLine();
     }
 
     welcome() {
@@ -51,7 +46,6 @@ class OutputView {
 
     printError(error) {
         Console.print(error.message);
-        this.blankLine();
     }
 
     printReceipt(products = [], free = [], price = []) {

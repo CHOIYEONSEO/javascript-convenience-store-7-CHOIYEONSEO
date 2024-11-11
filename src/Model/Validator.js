@@ -23,6 +23,14 @@ class Validator {
             throw new Error(errorMessage);
         }
     }
+
+    intention(input) {
+        if (input == "Y" || input == "N") {
+            return input;
+        }
+        const errorMessage = `[ERROR] 잘못된 입력입니다. 다시 입력해 주세요.`;
+        throw new Error(errorMessage);
+    }
 }
 
 export default Validator;

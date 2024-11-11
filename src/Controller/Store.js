@@ -8,6 +8,7 @@ import Receipt from "../Model/Receipt.js";
 import updateFile from "../Model/updateProducts.js";
 
 const PRODUCTS_FILE_PATH = "public/products.md";
+const VALIDATE = new Validator();
 
 class Store {
     #inputView;
@@ -40,9 +41,20 @@ class Store {
     }
 
     async membership() {
-        const input = await this.#inputView.applyMembership(); // input 유효성 체크 필요
-
+        const input = await this.getValidMembership();
         this.#receipt.setPrice(input);
+    }
+
+    async getValidMembership() {
+        while (true) {
+            let input = await this.#inputView.applyMembership();
+
+            try {
+                return VALIDATE.intention(input);
+            } catch (error) {
+                this.#outputView.printError(error);
+            }
+        }
     }
 
     getReceipt() {
@@ -54,11 +66,22 @@ class Store {
     }
 
     async additionalPurchase() {
-        const input = await this.#inputView.additional(); // input 유효성 체크 필요
-
+        const input = await this.getValidAdditional();
         updateFile(PRODUCTS_FILE_PATH, this.products);
 
         return input;
+    }
+
+    async getValidAdditional() {
+        while (true) {
+            let input = await this.#inputView.additional();
+
+            try {
+                return VALIDATE.intention(input);
+            } catch (error) {
+                this.#outputView.printError(error);
+            }
+        }
     }
 
     async getPurchaseInput() {
@@ -67,8 +90,8 @@ class Store {
 
             try {
                 // 유효성 체크
-                const validate = new Validator();
-                input = validate.purchaseInput(input);
+                //const validate = new Validator();
+                input = VALIDATE.purchaseInput(input);
 
                 this.checkExistence(input, this.products);
                 
@@ -222,7 +245,8 @@ class Store {
     async checkCase(whatCase, returnValue, product, demandNumber) {
         switch (whatCase) {
             case "more":
-                const getMore = await this.#inputView.getMore(product, returnValue); // askGetMore도 분리하기
+                const getMore = await this.getValidMore(product, returnValue);
+                //const getMore = await this.#inputView.getMore(product, returnValue); // askGetMore도 분리하기
 
                 if (getMore == "Y") {
                     return demandNumber += returnValue; // 재고 넘는지 체크
@@ -238,8 +262,20 @@ class Store {
         }
     }
 
+    async getValidMore(product, moreNumber) {
+        while (true) {
+            let getMore = await this.#inputView.getMore(product, moreNumber);
+
+            try { 
+                return VALIDATE.intention(getMore);
+            } catch (error) {
+                this.#outputView.printError(error);
+            }
+        }
+    }
+
     async askApplyRegular(product, overNumber, purchaseNumber) {
-        const applyRegular = await this.#inputView.applyRegular(product, overNumber);
+        const applyRegular = await this.getValidRegular(product, overNumber);
 
         if (applyRegular == "N") {
             return purchaseNumber - overNumber;
@@ -247,6 +283,18 @@ class Store {
 
         this.#receipt.setRegular(product, overNumber);
         return purchaseNumber;
+    }
+
+    async getValidRegular(product, overNumber) {
+        while (true) {
+            let applyRegular = await this.#inputView.applyRegular(product, overNumber);
+
+            try {
+                return VALIDATE.intention(applyRegular);
+            } catch (error) {
+                this.#outputView.printError(error);
+            }
+        }
     }
     
 

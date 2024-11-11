@@ -15,9 +15,8 @@ describe("Validator 테스트", () => {
         expect(() => validate.checkFormat(condition)).toThrow("[ERROR]");
     });
 
-
+    test.each([" ", "\n", "y", "n", "네"])("사용자에게 의사를 입력받는 경우 Y 또는 N이 아닌 '%s'를 입력하면 에러가 발생한다", (condition) => {
+        expect(() => validate.intention(condition)).toThrow("[ERROR]"); 
+    });
     
-
-
-
 });
