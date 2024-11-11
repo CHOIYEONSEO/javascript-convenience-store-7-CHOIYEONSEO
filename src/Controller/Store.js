@@ -5,7 +5,7 @@ import OutputView from "../View/OutputView.js";
 import Validator from "../Model/Validator.js";
 import {Console} from "@woowacourse/mission-utils";
 import Receipt from "../Model/Receipt.js";
-import updateFile from "../Model/updateProducts.js";
+import updateFile from "../Model/updateFile.js";
 
 const PRODUCTS_FILE_PATH = "public/products.md";
 const VALIDATE = new Validator();
