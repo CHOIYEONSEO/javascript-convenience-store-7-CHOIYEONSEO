@@ -37,6 +37,16 @@ class App {
                     return new Product(...splitElement);
                 }
             }).filter(element => element);
+
+            products.forEach((product, index) => {
+                if (product.promotion !== "null") {
+                    const hasGeneral = products.some(element => element.name == product.name && element.promotion == "null");
+
+                    if (!hasGeneral) {
+                        products.splice(index+1, 0 , new Product(product.name, product.price, 0, "null"));
+                    }
+                }
+            });
     
             const store = new Store(products, availablePromotion);
             const additionalPurchase = await store.open();
