@@ -10,6 +10,8 @@ class Validator {
     purchaseInput(input) {
         let formattedInput = this.checkFormat(input);
 
+        this.checkDuplicate(formattedInput);
+
         return formattedInput;
     }
 
@@ -20,6 +22,16 @@ class Validator {
             return matches.map(match => [match[1], Number(match[2])]);
         } else {
             const errorMessage = `[ERROR] 올바르지 않은 형식으로 입력했습니다. 다시 입력해 주세요.`;
+            throw new Error(errorMessage);
+        }
+    }
+
+    checkDuplicate(inputs = []) {
+        const name = inputs.map(element => element[0]);
+        const nameSet = new Set(name);
+
+        if (name.length !== nameSet.size) {
+            const errorMessage = `[ERROR] 잘못된 입력입니다. 다시 입력해 주세요.`;
             throw new Error(errorMessage);
         }
     }
