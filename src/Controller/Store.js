@@ -5,6 +5,9 @@ import OutputView from "../View/OutputView.js";
 import Validator from "../Model/Validator.js";
 import {Console} from "@woowacourse/mission-utils";
 import Receipt from "../Model/Receipt.js";
+import updateFile from "../Model/updateProducts.js";
+
+const PRODUCTS_FILE_PATH = "public/products.md";
 
 class Store {
     #inputView;
@@ -31,6 +34,9 @@ class Store {
 
         await this.membership();
         this.getReceipt();
+        const additionalPurchase = await this.additionalPurchase();
+
+        return additionalPurchase;
     }
 
     async membership() {
@@ -45,6 +51,14 @@ class Store {
         const priceSummary = this.#receipt.getPrice();
         
         this.#outputView.printReceipt(productsSummary, freeSummary, priceSummary);
+    }
+
+    async additionalPurchase() {
+        const input = await this.#inputView.additional(); // input 유효성 체크 필요
+
+        updateFile(PRODUCTS_FILE_PATH, this.products);
+
+        return input;
     }
 
     async getPurchaseInput() {
