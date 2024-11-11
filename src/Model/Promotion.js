@@ -1,6 +1,6 @@
 import { DateTimes } from "@woowacourse/mission-utils";
 
-const DELIMITER =  "-";
+const DELIMITER = "-";
 
 class Promotion {
     name;
@@ -24,10 +24,10 @@ class Promotion {
     }
 
     availableDate() {
-        const {year, month, date} = this.splitDate(this.#startDate);
-        
+        const { year, month, date } = this.splitDate(this.#startDate);
+
         if (this.#today_year >= year && this.#today_month >= month && this.#today_date >= date) {
-            const {year, month, date} = this.splitDate(this.#endDate);
+            const { year, month, date } = this.splitDate(this.#endDate);
 
             if (this.#today_year <= year && this.#today_month <= month && this.#today_date <= date) {
                 return this;
@@ -41,7 +41,7 @@ class Promotion {
         const month = Number(splitValue[1]);
         const date = Number(splitValue[2]);
 
-        return {year, month, date};
+        return { year, month, date };
     }
 
     findByName(value) {

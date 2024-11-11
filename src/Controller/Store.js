@@ -1,9 +1,6 @@
-import fs from "fs";
-import Products from "../Model/Product.js";
 import InputView from "../View/InputView.js";
 import OutputView from "../View/OutputView.js";
 import Validator from "../Model/Validator.js";
-import {Console} from "@woowacourse/mission-utils";
 import Receipt from "../Model/Receipt.js";
 import updateFile from "../Model/updateFile.js";
 
@@ -20,7 +17,7 @@ class Store {
     constructor(products, promotions, inputView = new InputView(), outputView = new OutputView(), receipt = new Receipt()) {
         this.#inputView = inputView;
         this.#outputView = outputView;
-        this.products = products;  // 리팩토링 시 app.js에 있는 products[] 생성 코드 여기로 가져오기
+        this.products = products;
         this.#promotions = promotions;
         this.#receipt = receipt;
     }
@@ -28,7 +25,7 @@ class Store {
     async open() {
         this.#outputView.initial(this.products);
         const demand = await this.getPurchaseInput();
-        
+
         for (const element of demand) {
             await this.purchase(element);
         }
@@ -48,7 +45,7 @@ class Store {
             try {
                 input = VALIDATE.purchaseInput(input); // 구매할 수량 형식 맞는지 확인
                 this.checkValidPurchase(input, this.products); // 존재하는 상품명인지 구매할 수량이 총재고((프로모션재고)+일반재고)를 넘지 않는지 확인
-                
+
                 return input;
             } catch (error) {
                 this.#outputView.printError(error);
@@ -65,7 +62,7 @@ class Store {
             // 수량이 (프로모션 0) 프로모션재고 + 일반재고 / (프로모션 x) 일반재고 넘는지 확인
             const inputNumber = input[1];
             this.checkOverStock(inputNumber, foundProducts);
-        })      
+        })
     }
 
     checkValidName(name, targets = []) {
@@ -83,7 +80,7 @@ class Store {
         const stockNumber = targets.reduce((acc, cur) => {
             return acc + cur.quantity;
         }, 0);
-        
+
         if (input > stockNumber) {
             const errorMessage = `[ERROR] 재고 수량을 초과하여 구매할 수 없습니다. 다시 입력해 주세요.`;
             throw new Error(errorMessage);
@@ -98,42 +95,22 @@ class Store {
 
         const condition = this.isPromotion(demandProduct); // 프로모션 상품인지 확인
         const targetProducts = this.products.filter(target => target.isExistence(demandProduct)); // 프로모션 상품, 일반 상품 모두 찾기
-  
-        //if (condition) {
-        //    demandNumber = await this.checkPromotionStock(demandProduct, demandNumber);
-        //}
 
         if (targetProducts.length == 2) {
             // 프로모션 상품이 있을 때
             return await this.purchasePromotion(targetProducts, demandNumber);
-
-
-        //    const promotionStock = targetProducts[0].quantity;
-        //   if (promotionStock < demandNumber) {
-        //        targetProducts[0].purchase(demandProduct, promotionStock, condition);
-        //        targetProducts[1].purchase(demandProduct, demandNumber - promotionStock, false);
-        //        this.#receipt.setProducts(demandProduct, demandNumber, targetProducts[0].price);
-        //        this.freeSummary(targetProducts[0], promotionStock);
-        //        return;
-        //    }
         }
 
         return this.purchaseProduct(demandProduct, demandNumber, condition);
-        //const targetProduct = this.products.find((product) => product.find(demandProduct, condition));
-
-        //targetProduct.purchase(demandProduct, demandNumber, condition);
-        //this.#receipt.setProducts(demandProduct, demandNumber, targetProduct.price);
-        //this.freeSummary(targetProduct, demandNumber);
-        //this.regularSummary(targetProduct, demandNumber);
     }
 
     async purchasePromotion(targetProducts, demandNumber) { // 프로모션 상품 구매하려는 상황
         const purchaseNumber = await this.checkPromotionStock(targetProducts, demandNumber); // 프로모션 재고가 부족해서 원가 결제 해야하는지 확인
         const promotionStock = targetProducts[0].quantity;
         const demandProduct = targetProducts[0].name;
-    
+
         if (promotionStock < purchaseNumber) {
-            targetProducts[0].purchase(demandProduct, promotionStock, true); // true, false 조건이 필요한가?
+            targetProducts[0].purchase(demandProduct, promotionStock, true);
             targetProducts[1].purchase(demandProduct, purchaseNumber - promotionStock, false);
             this.#receipt.setProducts(demandProduct, purchaseNumber, targetProducts[0].price);
             return this.freeSummary(targetProducts[0], promotionStock);
@@ -175,11 +152,11 @@ class Store {
         return await this.properStock(promotionElement, promotionStock, targetProducts[0].name, demandNumber);
     }
 
-    async lackStock(promotion, promotionStock, demandProduct, demandNumber) { // 정가 결제로 할지 말지 의사만 확인하면 검증 끝.
+    async lackStock(promotion, promotionStock, demandProduct, demandNumber) {
         const remainder = promotion.calculateStock(promotionStock);
         const overNumber = demandNumber - promotionStock + remainder;
         const purchaseNumber = await this.askApplyRegular(demandProduct, overNumber, demandNumber); // 정가 결제 의사에 따른 구매 개수
-        
+
         return purchaseNumber;
     }
 
@@ -194,7 +171,7 @@ class Store {
         switch (whatCase) {
             case "more":
                 const afterGetMore = demandNumber + returnValue;
-                if ( afterGetMore > promotionStock ) { // 프로모션 재고 넘어가므로 증정품 추가 할 수 없는 상황
+                if (afterGetMore > promotionStock) { // 프로모션 재고 넘어가므로 증정품 추가 할 수 없는 상황
                     return demandNumber;
                 }
 
@@ -217,21 +194,13 @@ class Store {
         while (true) {
             let getMore = await this.#inputView.getMore(product, moreNumber);
 
-            try { 
+            try {
                 return VALIDATE.intention(getMore);
             } catch (error) {
                 this.#outputView.printError(error);
             }
         }
     }
-
-    //async checkDemandNumber(promotion, demandProduct, demandNumber) {
-    //    const demandPromotion = this.whatPromotion(demandProduct);
-
-    //   const promotion = this.#promotions.find(promotion => promotion.findByName(demandPromotion));
-        
-    //    return promotion.calculateMore(demandNumber);
-    //}
 
     async askApplyRegular(product, overNumber, purchaseNumber) {
         const applyRegular = await this.getValidRegular(product, overNumber); // 유효한 정가 결제 의사
@@ -240,7 +209,7 @@ class Store {
             return purchaseNumber - overNumber;
         }
 
-        this.#receipt.setRegular(product, overNumber); 
+        this.#receipt.setRegular(product, overNumber);
         return purchaseNumber; // 정가 결제 함
     }
 
@@ -256,33 +225,9 @@ class Store {
         } // 유효할 때 까지 입력
     }
 
-    
-
-    //async checkPromotionStock(demandProduct, demandNumber) {
-    //    const promotionStock = this.calculatePromotionStock(demandProduct); // 프로모션 상품의 재고 개수
-
-    //    const demandPromotion = this.whatPromotion(demandProduct); // checkDemandNumber과 중복. 프로모션 상품이 어떤 프로모션인지
-    //    const promotion = this.#promotions.find(promotion => promotion.findByName(demandPromotion)); // checkDemandNumber과 중복. 프로모션 배열에서 사려는 프로모션 정보 반환
-
-    //   if (promotionStock < demandNumber) {
-    //        return await this.lackStock(promotion, promotionStock, demandProduct, demandNumber);
-    //    }
-
-    //    return await this.properStock(demandProduct, demandNumber); // 한번더 재고 넘지 않는지 확인할 필요 있음
-    //}
-
-    
-
-
-
-
-
-
-
-
-    isPromotion(purchaseProduct) { //isPromotion? whatPromotion? => 필요한가?
+    isPromotion(purchaseProduct) {
         const filtered = this.products.filter(product => product.name == purchaseProduct);
-        
+
         const isPromotion = filtered.some((filter) => {
             if (filter.promotion !== 'null') {
                 return true;
@@ -292,10 +237,6 @@ class Store {
 
         return isPromotion;
     }
-
-
-
-    
 
     async membership() {
         const input = await this.getValidMembership();
@@ -318,7 +259,7 @@ class Store {
         const productsSummary = this.#receipt.getProducts();
         const freeSummary = this.#receipt.getFree();
         const priceSummary = this.#receipt.getPrice();
-        
+
         this.#outputView.printReceipt(productsSummary, freeSummary, priceSummary);
     }
 
@@ -341,19 +282,11 @@ class Store {
         }
     }
 
-
-
-    
-
     regularSummary(product, demandNumber) {
         if (product.promotion == "null") {
             this.#receipt.setRegular(product.name, demandNumber);
         }
     }
-
-
-
-    
 
     whatPromotion(demandProduct) {
         const filtered = this.products.filter(product => product.name == demandProduct && product.promotion !== 'null');
@@ -366,17 +299,6 @@ class Store {
 
         return filtered[0].quantity;
     }
-
-    
-
-    
-
-    
-
-    
-    
-
-
 }
 
 export default Store;

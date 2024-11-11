@@ -45,7 +45,7 @@ class Receipt {
         const promotionPrice = this.getPromotionPrice();
         const membershipPrice = this.setMembershipPrice(membershipIntention);
         const finalPrice = totalPrice - promotionPrice - membershipPrice;
-    
+
         this.#price.push(totalNumber, totalPrice, promotionPrice, membershipPrice, finalPrice);
     }
 
@@ -80,7 +80,7 @@ class Receipt {
     setMembershipPrice(intention) {
         if (intention == "Y") {
             return this.getMembershipPrice();
-        } 
+        }
 
         return 0;
     }
