@@ -1,4 +1,4 @@
- import Store from "../src/Controller/Store.js";
+import Store from "../src/Controller/Store.js";
 import Product from "../src/Model/Product.js";
 import Promotion from "../src/Model/Promotion.js";
 import Receipt from "../src/Model/Receipt.js";
@@ -47,6 +47,7 @@ describe("Store 테스트", () => {
     let store3;
     let store4;
     let store5;
+    let store6;
     let mockInputView;
 
     beforeEach(() => {
@@ -61,20 +62,20 @@ describe("Store 테스트", () => {
         store3 = new Store(products2, promotions, mockInputView);
         store4 = new Store(products3, promotions, mockInputView);
         store5 = new Store(products4, promotions, mockInputView, undefined, receipt);
+        store6 = new Store(products3, promotions, mockInputView);
     });
 
     // store
-    test("존재하는 상품을 입력하면 에러가 발생하지 않는다", () => {
-        const input = [['콜라', 3], ['사이다', 1]];
+    test.each([['콜라', 3], ['사이다', 1]])("존재하는 %s를 입력하면 에러가 발생하지 않는다", (condition) => {
 
-        expect(() => store.checkExistence(input, products)).not.toThrow("[ERROR]");
+        expect(() => store.checkValidName(condition, products)).not.toThrow("[ERROR]");
        
     });
 
     test("존재하지 않는 상품을 입력하면 에러 처리한다", () => {
         const input = [['감', 3]];
 
-        expect(() => store.checkExistence(input, products)).toThrow("[ERROR]");
+        expect(() => store.checkValidName(input, products)).toThrow("[ERROR]");
        
     });
 
@@ -140,50 +141,37 @@ describe("Store 테스트", () => {
         expect(store3.whatPromotion(product)).toBe("탄산2+1");
     })
 
-    test.each([2, 5, 8])("2+1인 상품에 대해 고객이 %s개 가져온 경우 more과 더 가져올 개수 1을 반환한다", async (condition) => {
+    test.each([2, 5, 8])("2+1 할인, 프로모션 재고보다 적은 구매할개수(%s), 1개 덜 가져옴", async (condition) => {
         const product = "콜라";
-        const { whatCase, returnValue } = await store3.checkDemandNumber(product, condition);
-        
-        expect(whatCase).toBe("more");
-        expect(returnValue).toBe(1);
-    })
-
-    test.each([1, 4, 7])("2+1인 상품에 대해 고객이 %s개 가져온 경우 regular과 정가로 결제할 개수 1을 반환한다", async (condition) => {
-        const product = "콜라";
-        const { whatCase, returnValue } = await store3.checkDemandNumber(product, condition);
-        
-        expect(whatCase).toBe("regular");
-        expect(returnValue).toBe(1);
-    })
-
-    test.each([3, 6])("2+1인 상품에 대해 고객이 %s개 가져온 경우 pass와 0을 반환한다", async (condition) => {
-        const product = "콜라";
-        const { whatCase, returnValue } = await store3.checkDemandNumber(product, condition);
-        
-        expect(whatCase).toBe("pass");
-        expect(returnValue).toBe(0);
-    })
-
-     test("2+1 상품을 2개만 가져온 경우 1개를 더 추가하지 않고 재고를 차감한다", async () => {
-        const product = ["콜라", 2];
-
-        mockInputView.getMore.mockResolvedValueOnce("N");
-        await store3.purchase(product);
-
-        expect(store3.products[0].quantity).toBe(8);
-    })
-
-     test("2+1 상품을 2개만 가져온 경우 1개를 더 추가해서 재고를 차감한다", async () => {
-        const product = ["콜라", 2];
+        const stock = 10;
 
         mockInputView.getMore.mockResolvedValueOnce("Y");
-        await store3.purchase(product);
+        const purchaseNumber = await store3.properStock(promotions[0], stock, product, condition);
+        
+        expect(purchaseNumber).toBe(condition + 1);
+    })
 
-        expect(store3.products[0].quantity).toBe(5);
+    test.each([1, 4, 7])("2+1 할인, 프로모션 재고보다 적은 구매할개수(%s), 1개 정가로 결제해야됨", async (condition) => {
+        const product = "콜라";
+        const stock = 10;
+
+        mockInputView.applyRegular.mockResolvedValueOnce("Y");
+        const purchaseNumber = await store3.properStock(promotions[0], stock, product, condition);
+
+        expect(purchaseNumber).toBe(condition);
+    })
+
+    test.each([3, 6])("2+1 할인, 프로모션 재고보다 적은 구매할개수(%s), 잘 가져옴", async (condition) => {
+        const product = "콜라";
+        const stock = 10;
+
+        const purchaseNumber = await store3.properStock(promotions[0], stock, product, condition);
+
+        expect(purchaseNumber).toBe(condition);
     })
 
     test("증정 받을 수 있는 상품을 1개 덜 가져온 상황이면 추가 의사에 따라 덜 가져온 상품 개수를 더하거나 원래 개수를 반환한다", async () => {
-        const value = ["more", 1, "콜라", 5];
+        const value = ["more", 1, 10,"콜라", 5];
 
         mockInputView.getMore.mockResolvedValueOnce("N");
         expect(await store3.checkCase(...value)).toBe(5);
@@ -193,7 +181,7 @@ describe("Store 테스트", () => {
     })
 
     test("2+1할인 상품인데 4개만 가져온 상황이면 정가 결제 의사에 따라 정가로 결제해야하는 수량을 빼거나 원래 개수를 반환한다", async () => {
-        const value = ["regular", 1, "콜라", 4];
+        const value = ["regular", 1, 10, "콜라", 4];
         
         mockInputView.applyRegular.mockResolvedValueOnce("N");
         expect(await store3.checkCase(...value)).toBe(3);
@@ -203,7 +191,7 @@ describe("Store 테스트", () => {
     })
 
     test("2+1할인 상품을 적절한 개수로 가져온 상황이면 원래 개수를 반환한다", async () => {
-        const value = ["pass", 0, "콜라", 3];
+        const value = ["pass", 0, 10, "콜라", 3];
 
         expect(await store3.checkCase(...value)).toBe(3);
     })
@@ -251,23 +239,48 @@ describe("Store 테스트", () => {
         expect(await store4.lackStock(...value)).toBe(2);
     })
 
-    test("재고보다 많은 개수를 사려고 하면 lackStock 실행, 재고보다 적은 개수 사려고 하면 properStock 실행", async () => {
-        let value = ["콜라", 15]; // 2+1할인, 재고 10개
-
-        mockInputView.applyRegular.mockResolvedValueOnce("N");
-        expect(await store4.checkPromotionStock(...value)).toBe(9);
-
-        value = ["콜라", 5];
+    test("2+1 상품을 2개만 가져온 경우 1개를 더 추가하지 않고 재고를 차감한다", async () => {
+        const product = ["콜라", 2];
+        expect(store6.products[0].quantity).toBe(10);
+        expect(store6.products[1].quantity).toBe(8);
 
         mockInputView.getMore.mockResolvedValueOnce("N");
-        expect(await store4.checkPromotionStock(...value)).toBe(5);
+        await store6.purchase(product);
+
+        expect(store6.products[0].quantity).toBe(8);
+        expect(store6.products[1].quantity).toBe(8);
     })
 
-     test("프로모션 재고보다 많은 개수를 사려고 하면 부족한만큼 일반 재고를 차감한다", async () => {
-        const product = ["콜라", 15]; // 2+1할인, 프로모션 재고 10, 일반 재고 8
+     test("2+1 상품을 2개만 가져온 경우 1개를 더 추가해서 재고를 차감한다", async () => {
+        const product = ["콜라", 2];
+        expect(store6.products[0].quantity).toBe(8);
+        expect(store6.products[1].quantity).toBe(8);
+
+        mockInputView.getMore.mockResolvedValueOnce("Y");
+        await store6.purchase(product);
+
+        expect(store6.products[0].quantity).toBe(5);
+        expect(store6.products[1].quantity).toBe(8);
+    })
+
+    test("재고보다 많은 개수를 사려고 하면 lackStock 실행, 재고보다 적은 개수 사려고 하면 properStock 실행", async () => {
+        let value = [[store6.products[0],store6.products[1]], 8]; // 2+1할인, 재고 5개
+
+        mockInputView.applyRegular.mockResolvedValueOnce("N");
+        expect(await store6.checkPromotionStock(...value)).toBe(5);
+
+        value = [[store6.products[0],store6.products[1]], 2];
+
+        mockInputView.getMore.mockResolvedValueOnce("N");
+        expect(await store6.checkPromotionStock(...value)).toBe(2);
+    })
+
+     test("프로모션 재고보다 많은 개수를 사려고 하면 부족한만큼 일반 재고를 차감한다.", async () => {
+        const product = ["콜라", 10]; // 2+1할인, 프로모션 재고 5, 일반 재고 8
+        expect(store4.products[0].quantity).toBe(5);
+        expect(store4.products[1].quantity).toBe(8);
 
         mockInputView.applyRegular.mockResolvedValueOnce("Y");
-        
         await store4.purchase(product);
 
         expect(store4.products[0].quantity).toBe(0);

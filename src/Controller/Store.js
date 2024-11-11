@@ -40,6 +40,263 @@ class Store {
         return additionalPurchase;
     }
 
+    // 구매할 수량 입력
+    async getPurchaseInput() {
+        while (true) {
+            let input = await this.#inputView.buy(); // input = [[],..]
+
+            try {
+                input = VALIDATE.purchaseInput(input); // 구매할 수량 형식 맞는지 확인
+                this.checkValidPurchase(input, this.products); // 존재하는 상품명인지 구매할 수량이 총재고((프로모션재고)+일반재고)를 넘지 않는지 확인
+                
+                return input;
+            } catch (error) {
+                this.#outputView.printError(error);
+            }
+        }
+    }
+
+    checkValidPurchase(inputs = [], targets = []) {
+        inputs.forEach((input) => { // 모든 인풋에 대해 확인
+            // 존재하는 상품명인지 확인
+            const inputName = input[0];
+            const foundProducts = this.checkValidName(inputName, targets);
+
+            // 수량이 (프로모션 0) 프로모션재고 + 일반재고 / (프로모션 x) 일반재고 넘는지 확인
+            const inputNumber = input[1];
+            this.checkOverStock(inputNumber, foundProducts);
+        })      
+    }
+
+    checkValidName(name, targets = []) {
+        const foundTargets = targets.filter(target => target.isExistence(name)); // 인풋이 상품 배열에 없으면 빈 배열 반환
+
+        if (foundTargets.length === 0) {
+            const errorMessage = `[ERROR] 존재하지 않는 상품입니다. 다시 입력해 주세요.`;
+            throw new Error(errorMessage);
+        }
+
+        return foundTargets;
+    }
+
+    checkOverStock(input, targets = []) {
+        const stockNumber = targets.reduce((acc, cur) => {
+            return acc + cur.quantity;
+        }, 0);
+        
+        if (input > stockNumber) {
+            const errorMessage = `[ERROR] 재고 수량을 초과하여 구매할 수 없습니다. 다시 입력해 주세요.`;
+            throw new Error(errorMessage);
+        }
+    }
+    // 구매할 수량 입력 끝
+
+    // 구매 시작
+    async purchase(input) {
+        const demandProduct = input[0];
+        let demandNumber = input[1];
+
+        const condition = this.isPromotion(demandProduct); // 프로모션 상품인지 확인
+        const targetProducts = this.products.filter(target => target.isExistence(demandProduct)); // 프로모션 상품, 일반 상품 모두 찾기
+  
+        //if (condition) {
+        //    demandNumber = await this.checkPromotionStock(demandProduct, demandNumber);
+        //}
+
+        if (targetProducts.length == 2) {
+            // 프로모션 상품이 있을 때
+            return await this.purchasePromotion(targetProducts, demandNumber);
+
+
+        //    const promotionStock = targetProducts[0].quantity;
+        //   if (promotionStock < demandNumber) {
+        //        targetProducts[0].purchase(demandProduct, promotionStock, condition);
+        //        targetProducts[1].purchase(demandProduct, demandNumber - promotionStock, false);
+        //        this.#receipt.setProducts(demandProduct, demandNumber, targetProducts[0].price);
+        //        this.freeSummary(targetProducts[0], promotionStock);
+        //        return;
+        //    }
+        }
+
+        return this.purchaseProduct(demandProduct, demandNumber, condition);
+        //const targetProduct = this.products.find((product) => product.find(demandProduct, condition));
+
+        //targetProduct.purchase(demandProduct, demandNumber, condition);
+        //this.#receipt.setProducts(demandProduct, demandNumber, targetProduct.price);
+        //this.freeSummary(targetProduct, demandNumber);
+        //this.regularSummary(targetProduct, demandNumber);
+    }
+
+    async purchasePromotion(targetProducts, demandNumber) { // 프로모션 상품 구매하려는 상황
+        const purchaseNumber = await this.checkPromotionStock(targetProducts, demandNumber); // 프로모션 재고가 부족해서 원가 결제 해야하는지 확인
+        const promotionStock = targetProducts[0].quantity;
+        const demandProduct = targetProducts[0].name;
+    
+        if (promotionStock < purchaseNumber) {
+            targetProducts[0].purchase(demandProduct, promotionStock, true); // true, false 조건이 필요한가?
+            targetProducts[1].purchase(demandProduct, purchaseNumber - promotionStock, false);
+            this.#receipt.setProducts(demandProduct, purchaseNumber, targetProducts[0].price);
+            return this.freeSummary(targetProducts[0], promotionStock);
+        }
+
+        return this.purchaseProduct(demandProduct, purchaseNumber, true);
+    }
+
+    purchaseProduct(demandProduct, demandNumber, condition) {
+        const targetProduct = this.products.find((product) => product.find(demandProduct, condition));
+        targetProduct.purchase(demandProduct, demandNumber, condition);
+        this.#receipt.setProducts(demandProduct, demandNumber, targetProduct.price);
+
+        if (condition) {
+            this.freeSummary(targetProduct, demandNumber);
+            return;
+        }
+        this.regularSummary(targetProduct, demandNumber);
+    }
+
+    freeSummary(product, demandNumber) {
+        const promotion = this.#promotions.find(promotion => promotion.findByName(product.promotion));
+        const freeNumber = promotion.calculateFree(demandNumber);
+
+        this.#receipt.setFree(product.name, freeNumber, product.price);
+    }
+
+    async checkPromotionStock(targetProducts, demandNumber) {
+        const promotionStock = targetProducts[0].quantity;
+        const demandPromotion = targetProducts[0].promotion;
+        // 총 개수 넘길 수 있음
+        const promotionElement = this.#promotions.find(promotion => promotion.findByName(demandPromotion));
+
+        // 프로모션 재고가 원하는 수량보다 부족하면 정가 결제로 안내
+        if (promotionStock < demandNumber) {
+            return await this.lackStock(promotionElement, promotionStock, targetProducts[0].name, demandNumber); // 검증 끝
+        }
+
+        return await this.properStock(promotionElement, promotionStock, targetProducts[0].name, demandNumber);
+    }
+
+    async lackStock(promotion, promotionStock, demandProduct, demandNumber) { // 정가 결제로 할지 말지 의사만 확인하면 검증 끝.
+        const remainder = promotion.calculateStock(promotionStock);
+        const overNumber = demandNumber - promotionStock + remainder;
+        const purchaseNumber = await this.askApplyRegular(demandProduct, overNumber, demandNumber); // 정가 결제 의사에 따른 구매 개수
+        
+        return purchaseNumber;
+    }
+
+    async properStock(promotion, promotionStock, demandProduct, demandNumber) { // 한번더 재고 넘지 않는지 확인할 필요 있음. 검증 완료
+        const { whatCase, returnValue } = await promotion.calculateMore(demandNumber);
+        const purchaseNumber = await this.checkCase(whatCase, returnValue, promotionStock, demandProduct, demandNumber);
+
+        return purchaseNumber;
+    }
+
+    async checkCase(whatCase, returnValue, promotionStock, product, demandNumber) {
+        switch (whatCase) {
+            case "more":
+                const afterGetMore = demandNumber + returnValue;
+                if ( afterGetMore > promotionStock ) { // 프로모션 재고 넘어가므로 증정품 추가 할 수 없는 상황
+                    return demandNumber;
+                }
+
+                const getMore = await this.getValidMore(product, returnValue);
+                if (getMore == "Y") {
+                    return afterGetMore;
+                }
+
+                return demandNumber;
+            case "regular":
+                const purchaseNumber = await this.askApplyRegular(product, returnValue, demandNumber);
+
+                return purchaseNumber;
+            default:
+                return demandNumber;
+        }
+    }
+
+    async getValidMore(product, moreNumber) {
+        while (true) {
+            let getMore = await this.#inputView.getMore(product, moreNumber);
+
+            try { 
+                return VALIDATE.intention(getMore);
+            } catch (error) {
+                this.#outputView.printError(error);
+            }
+        }
+    }
+
+    //async checkDemandNumber(promotion, demandProduct, demandNumber) {
+    //    const demandPromotion = this.whatPromotion(demandProduct);
+
+    //   const promotion = this.#promotions.find(promotion => promotion.findByName(demandPromotion));
+        
+    //    return promotion.calculateMore(demandNumber);
+    //}
+
+    async askApplyRegular(product, overNumber, purchaseNumber) {
+        const applyRegular = await this.getValidRegular(product, overNumber); // 유효한 정가 결제 의사
+
+        if (applyRegular == "N") { // 정가 결제 안함
+            return purchaseNumber - overNumber;
+        }
+
+        this.#receipt.setRegular(product, overNumber); 
+        return purchaseNumber; // 정가 결제 함
+    }
+
+    async getValidRegular(product, overNumber) {
+        while (true) {
+            const applyRegular = await this.#inputView.applyRegular(product, overNumber);
+
+            try {
+                return VALIDATE.intention(applyRegular);
+            } catch (error) {
+                this.#outputView.printError(error);
+            }
+        } // 유효할 때 까지 입력
+    }
+
+    
+
+    //async checkPromotionStock(demandProduct, demandNumber) {
+    //    const promotionStock = this.calculatePromotionStock(demandProduct); // 프로모션 상품의 재고 개수
+
+    //    const demandPromotion = this.whatPromotion(demandProduct); // checkDemandNumber과 중복. 프로모션 상품이 어떤 프로모션인지
+    //    const promotion = this.#promotions.find(promotion => promotion.findByName(demandPromotion)); // checkDemandNumber과 중복. 프로모션 배열에서 사려는 프로모션 정보 반환
+
+    //   if (promotionStock < demandNumber) {
+    //        return await this.lackStock(promotion, promotionStock, demandProduct, demandNumber);
+    //    }
+
+    //    return await this.properStock(demandProduct, demandNumber); // 한번더 재고 넘지 않는지 확인할 필요 있음
+    //}
+
+    
+
+
+
+
+
+
+
+
+    isPromotion(purchaseProduct) { //isPromotion? whatPromotion? => 필요한가?
+        const filtered = this.products.filter(product => product.name == purchaseProduct);
+        
+        const isPromotion = filtered.some((filter) => {
+            if (filter.promotion !== 'null') {
+                return true;
+            }
+            return false;
+        })
+
+        return isPromotion;
+    }
+
+
+
+    
+
     async membership() {
         const input = await this.getValidMembership();
         this.#receipt.setPrice(input);
@@ -84,94 +341,9 @@ class Store {
         }
     }
 
-    async getPurchaseInput() {
-        while (true) {
-            let input = await this.#inputView.buy();
-
-            try {
-                // 유효성 체크
-                //const validate = new Validator();
-                input = VALIDATE.purchaseInput(input);
-
-                this.checkExistence(input, this.products);
-                
 
 
-                return input;
-
-            } catch (error) {
-                this.#outputView.printError(error);
-            }
-        }
-    }
-
-    // 함수 10줄 넘어감.
-    checkExistence(inputs = [], targets = []) {
-        inputs.forEach((input) => {
-            const inputName = input[0];
-            const foundInput = targets.filter((target) => { 
-                return target.isExistence(inputName);
-            })
-
-            if (foundInput.length === 0) {
-                const errorMessage = `[ERROR] 존재하지 않는 상품입니다. 다시 입력해 주세요.`;
-                throw new Error(errorMessage);
-            }
-
-            this.checkOverStock(input[1], foundInput);
-        })
-            
-    }
-
-    checkOverStock(input, targets = []) {
-        const stockNumber = targets.reduce((acc, cur) => {
-            return acc + cur.quantity;
-        }, 0);
-        
-        if (input > stockNumber) {
-            const errorMessage = `[ERROR] 재고 수량을 초과하여 구매할 수 없습니다. 다시 입력해 주세요.`;
-            throw new Error(errorMessage);
-        }
-    }
-
-    async purchase(input) {
-        const demandProduct = input[0];
-        let demandNumber = input[1];
-
-        const condition = this.isPromotion(demandProduct);
-        const targetProducts = this.products.map((product) => product.findByName(demandProduct)).filter(element => element);;
-
-        if (condition) {
-            demandNumber = await this.checkPromotionStock(demandProduct, demandNumber);
-        }
-
-        if (targetProducts.length == 2) {
-            const promotionStock = targetProducts[0].quantity;
-            if (promotionStock < demandNumber) {
-                targetProducts[0].purchase(demandProduct, promotionStock, condition);
-                targetProducts[1].purchase(demandProduct, demandNumber - promotionStock, false);
-                this.#receipt.setProducts(demandProduct, demandNumber, targetProducts[0].price);
-                this.freeSummary(targetProducts[0], promotionStock);
-                return;
-            }
-        }
-
-        const targetProduct = this.products.find((product) => product.find(demandProduct, condition));
-
-        targetProduct.purchase(demandProduct, demandNumber, condition);
-        this.#receipt.setProducts(demandProduct, demandNumber, targetProduct.price);
-        this.freeSummary(targetProduct, demandNumber);
-        this.regularSummary(targetProduct, demandNumber);
-    }
-
-    freeSummary(product, demandNumber) {
-        if (product.promotion !== "null") {
-            const promotion = this.#promotions.find(promotion => promotion.findByName(product.promotion));
-            const freeNumber = promotion.calculateFree(demandNumber);
     
-            this.#receipt.setFree(product.name, freeNumber, product.price);
-        }
-    }
 
     regularSummary(product, demandNumber) {
         if (product.promotion == "null") {
@@ -179,56 +351,9 @@ class Store {
         }
     }
 
-    isPromotion(purchaseProduct) { //isPromotion? whatPromotion?
-        const filtered = this.products.filter(product => product.name == purchaseProduct);
-        
-        const isPromotion = filtered.some((filter) => {
-            if (filter.promotion !== 'null') {
-                return true;
-            }
-            return false;
-        })
 
-        return isPromotion;
-    }
 
-    async checkPromotionStock(demandProduct, demandNumber) {
-        const promotionStock = this.calculatePromotionStock(demandProduct);
-
-        const demandPromotion = this.whatPromotion(demandProduct); // checkDemandNumber과 중복
-        const promotion = this.#promotions.find(promotion => promotion.findByName(demandPromotion)); // checkDemandNumber과 중복
-
-        if (promotionStock < demandNumber) {
-            return await this.lackStock(promotion, promotionStock, demandProduct, demandNumber);
-        }
-
-        return await this.properStock(demandProduct, demandNumber);
-    }
-
-    async lackStock(promotion, promotionStock, demandProduct, demandNumber) {
-        const remainder = promotion.calculateStock(promotionStock);
-        const overNumber = demandNumber - promotionStock + remainder;
-
-        const purchaseNumber = await this.askApplyRegular(demandProduct, overNumber, demandNumber);
-        
-        return purchaseNumber;
-    }
-
-    async properStock(demandProduct, demandNumber) {
-        const { whatCase, returnValue } = await this.checkDemandNumber(demandProduct, demandNumber);
-
-        const purchaseNumber = await this.checkCase(whatCase, returnValue, demandProduct, demandNumber);
-
-        return purchaseNumber;
-    }
-
-    async checkDemandNumber(demandProduct, demandNumber) {
-        const demandPromotion = this.whatPromotion(demandProduct);
-
-        const promotion = this.#promotions.find(promotion => promotion.findByName(demandPromotion));
-        
-        return promotion.calculateMore(demandNumber);
-    }
+    
 
     whatPromotion(demandProduct) {
         const filtered = this.products.filter(product => product.name == demandProduct && product.promotion !== 'null');
@@ -242,60 +367,13 @@ class Store {
         return filtered[0].quantity;
     }
 
-    async checkCase(whatCase, returnValue, product, demandNumber) {
-        switch (whatCase) {
-            case "more":
-                const getMore = await this.getValidMore(product, returnValue);
-                //const getMore = await this.#inputView.getMore(product, returnValue); // askGetMore도 분리하기
+    
 
-                if (getMore == "Y") {
-                    return demandNumber += returnValue; // 재고 넘는지 체크
-                }
+    
 
-                return demandNumber;
-            case "regular":
-                const purchaseNumber = await this.askApplyRegular(product, returnValue, demandNumber);
+    
 
-                return purchaseNumber;
-            default:
-                return demandNumber;
-        }
-    }
-
-    async getValidMore(product, moreNumber) {
-        while (true) {
-            let getMore = await this.#inputView.getMore(product, moreNumber);
-
-            try { 
-                return VALIDATE.intention(getMore);
-            } catch (error) {
-                this.#outputView.printError(error);
-            }
-        }
-    }
-
-    async askApplyRegular(product, overNumber, purchaseNumber) {
-        const applyRegular = await this.getValidRegular(product, overNumber);
-
-        if (applyRegular == "N") {
-            return purchaseNumber - overNumber;
-        }
-
-        this.#receipt.setRegular(product, overNumber);
-        return purchaseNumber;
-    }
-
-    async getValidRegular(product, overNumber) {
-        while (true) {
-            let applyRegular = await this.#inputView.applyRegular(product, overNumber);
-
-            try {
-                return VALIDATE.intention(applyRegular);
-            } catch (error) {
-                this.#outputView.printError(error);
-            }
-        }
-    }
+    
     
 
 
