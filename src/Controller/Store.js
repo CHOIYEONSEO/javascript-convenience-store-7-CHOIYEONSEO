@@ -28,17 +28,23 @@ class Store {
         for (const element of demand) {
             await this.purchase(element);
         }
-        
+
         await this.membership();
-        //const membershipIntention = await this.membership();
+        this.getReceipt();
     }
 
     async membership() {
         const input = await this.#inputView.applyMembership(); // input 유효성 체크 필요
 
         this.#receipt.setPrice(input);
+    }
 
-        //return input;
+    getReceipt() {
+        const productsSummary = this.#receipt.getProducts();
+        const freeSummary = this.#receipt.getFree();
+        const priceSummary = this.#receipt.getPrice();
+        
+        this.#outputView.printReceipt(productsSummary, freeSummary, priceSummary);
     }
 
     async getPurchaseInput() {
