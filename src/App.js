@@ -24,7 +24,7 @@ class App {
     
             const availablePromotion = promotions.map((promotion) => {
                 return promotion.availableDate();
-            });
+            }).filter(element => element);
     
             availablePromotion.push("null");
     
