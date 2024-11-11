@@ -33,7 +33,7 @@ class OutputView {
         }
 
         promotion = this.promotionMessage(promotion);
-        
+
         return `- ${name} ${price}원 ${quantity}개 ${promotion}`;
     }
 
@@ -51,7 +51,7 @@ class OutputView {
     printReceipt(products = [], free = [], price = []) {
         const header = "\n==============W 편의점================";
         Console.print(`${header}`);
-        
+
         this.productsSummaryHeader();
         this.productsSummary(products);
         this.freeSummaryHeader();
@@ -71,10 +71,10 @@ class OutputView {
         array.forEach((item) => {
             const productName = `${item[0].padEnd(PRODUCT_NAME_LENGTH)}${FILL_BY}`;
             const number = `${String(item[1]).padEnd(NUMBER_LENGTH)}${FILL_BY}`;
-            const price = `${(item[1]*item[2]).toLocaleString().padEnd(PRICE_LENGTH)}`;
+            const price = `${(item[1] * item[2]).toLocaleString().padEnd(PRICE_LENGTH)}`;
             Console.print(`${productName}${number}${price}`);
         })
-    }       
+    }
 
     freeSummaryHeader() {
         const header = "=============증	     정===============";
