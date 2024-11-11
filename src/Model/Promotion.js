@@ -1,8 +1,5 @@
 import { DateTimes } from "@woowacourse/mission-utils";
 
-const TODAY_YEAR = DateTimes.now().getFullYear();
-const TODAY_MONTH = DateTimes.now().getMonth() + 1;
-const TODAY_DATE = DateTimes.now().getDate();
 const DELIMITER =  "-";
 
 class Promotion {
@@ -11,6 +8,9 @@ class Promotion {
     #get;
     #startDate;
     #endDate;
+    #today_year;
+    #today_month;
+    #today_date;
 
     constructor(name, buy, get, startDate, endDate) {
         this.name = name;
@@ -18,15 +18,18 @@ class Promotion {
         this.#get = Number(get);
         this.#startDate = startDate;
         this.#endDate = endDate;
+        this.#today_year = DateTimes.now().getFullYear();
+        this.#today_month = DateTimes.now().getMonth() + 1;
+        this.#today_date = DateTimes.now().getDate();
     }
 
     availableDate() {
         const {year, month, date} = this.splitDate(this.#startDate);
         
-        if (TODAY_YEAR >= year && TODAY_MONTH >= month && TODAY_DATE >= date) {
+        if (this.#today_year >= year && this.#today_month >= month && this.#today_date >= date) {
             const {year, month, date} = this.splitDate(this.#endDate);
 
-            if (TODAY_YEAR <= year && TODAY_MONTH <= month && TODAY_DATE <= date) {
+            if (this.#today_year <= year && this.#today_month <= month && this.#today_date <= date) {
                 return this;
             }
         }
